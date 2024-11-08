@@ -1,6 +1,6 @@
 use std::{
     sync::{
-        atomic::{AtomicU32, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
         Arc,
     },
     thread::{self, JoinHandle},
@@ -19,6 +19,7 @@ pub struct Backend {
     install_thread: Option<JoinHandle<Result<(), anyhow::Error>>>,
     pm: Arc<DownloadProgressManager>,
     install_pm: Arc<AtomicU32>,
+    pub exit: Arc<AtomicBool>,
 }
 
 impl Default for Backend {
@@ -27,6 +28,7 @@ impl Default for Backend {
             install_thread: None,
             pm: Arc::new(DownloadProgressManager::default()),
             install_pm: Arc::new(AtomicU32::new(0)),
+            exit: Arc::new(AtomicBool::new(false)),
         }
     }
 }
@@ -124,7 +126,7 @@ impl Backend {
                 op,
             )?;
 
-            install_pm_clone.store(101, Ordering::SeqCst);
+            install_pm_clone.store(100, Ordering::SeqCst);
 
             Ok(())
         }));
@@ -138,7 +140,18 @@ impl Backend {
         self.install_pm.load(Ordering::SeqCst)
     }
 
+    fn is_finished(&self) -> bool {
+        self.install_thread
+            .as_ref()
+            .is_some_and(|x| x.is_finished())
+    }
+
     fn ping(&self) -> &'static str {
         "pong"
+    }
+
+    fn exit(&mut self) -> bool {
+        self.exit.store(true, Ordering::Relaxed);
+        true
     }
 }

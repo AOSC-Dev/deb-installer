@@ -56,11 +56,11 @@ export component DebInstaller inherits Window {
                 TabWidget {
                     Tab {
                         title: @tr("Description");
-                        Text {
+                        TextEdit {
                             font-size: 14px;
                             width: parent.width;
                             height: parent.height;
-                            text: "Lorem ipsum dolor sit amet,\n consectetur adipisici elit";
+                            text: root.description;
                         }
                     }
 

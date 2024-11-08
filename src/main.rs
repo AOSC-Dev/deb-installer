@@ -1,7 +1,7 @@
 use std::{
-    future::pending,
     path::PathBuf,
     process::{exit, Command},
+    sync::atomic::Ordering,
     thread,
     time::Duration,
 };
@@ -10,7 +10,8 @@ use backend::Backend;
 use clap::Parser;
 use oma_pm::apt::{AptConfig, OmaApt, OmaAptArgs};
 use slint::ComponentHandle;
-use tracing::debug;
+use tracing::{debug, info};
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 use zbus::{proxy, Connection, ConnectionBuilder};
 
 use crate::deb_installer::DebInstaller;
@@ -35,10 +36,25 @@ trait OmaClient {
     async fn install(&self, path: String) -> zbus::Result<bool>;
     async fn get_progress(&self) -> zbus::Result<u32>;
     async fn ping(&self) -> zbus::Result<String>;
+    async fn is_finished(&self) -> zbus::Result<bool>;
+    async fn exit(&self) -> zbus::Result<bool>;
 }
 
 fn main() {
     let Args { package, backend } = Args::parse();
+
+    let debug_filter: EnvFilter = "hyper=off,rustls=off,debug".parse().unwrap();
+    tracing_subscriber::registry()
+        .with(
+            fmt::layer()
+                .event_format(
+                    tracing_subscriber::fmt::format()
+                        .with_file(true)
+                        .with_line_number(true),
+                )
+                .with_filter(debug_filter),
+        )
+        .init();
 
     if let Some(package) = package {
         if !package.exists() {
@@ -74,7 +90,7 @@ fn main_window(arg: PathBuf) {
 
     let (pkgs, _) = apt.select_pkg(&[arg.as_str()], false, true, false).unwrap();
 
-    apt.install(&pkgs, false).unwrap();
+    apt.install(&pkgs, true).unwrap();
 
     let res = apt.resolve(true, false, false);
 
@@ -92,6 +108,7 @@ fn main_window(arg: PathBuf) {
 
     installer.set_package(pkg.raw_pkg.name().into());
     installer.set_metadata(info_str.into());
+    installer.set_description(info.description.into());
 
     let argc = arg.to_string();
 
@@ -103,9 +120,7 @@ fn main_window(arg: PathBuf) {
 }
 
 fn on_install(argc: String) {
-    thread::spawn(|| {
-        let _ = start_backend();
-    });
+    let _ = start_backend();
 
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -129,8 +144,10 @@ fn on_install(argc: String) {
         .unwrap();
 
     loop {
+        let is_finished = rt.block_on(client.is_finished()).unwrap();
         let progress = rt.block_on(get_progress(&client)).unwrap();
-        if progress == 101 {
+        if progress == 100 || is_finished {
+            rt.block_on(client.exit()).unwrap();
             break;
         }
         println!("{}", progress);
@@ -142,7 +159,7 @@ fn start_backend() -> anyhow::Result<()> {
     Command::new("pkexec")
         .arg(std::env::current_exe().unwrap())
         .arg("--backend")
-        .output()?;
+        .spawn()?;
 
     Ok(())
 }
@@ -162,6 +179,8 @@ async fn get_progress(client: &OmaClientProxy<'_>) -> anyhow::Result<u32> {
 async fn run_backend() -> anyhow::Result<()> {
     let backend = Backend::default();
 
+    let exit = backend.exit.clone();
+
     let _conn = ConnectionBuilder::system()?
         .name("io.aosc.DebInstaller")?
         .serve_at("/io/aosc/DebInstaller", backend)?
@@ -170,7 +189,12 @@ async fn run_backend() -> anyhow::Result<()> {
 
     debug!("zbus session created");
 
-    pending::<()>().await;
+    loop {
+        if exit.load(Ordering::Relaxed) {
+            info!("Bye.");
+            return Ok(());
+        }
 
-    Ok(())
+        thread::sleep(Duration::from_millis(100));
+    }
 }
