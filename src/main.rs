@@ -1,4 +1,5 @@
 use std::{
+    env::current_exe,
     path::PathBuf,
     process::{exit, Command},
     sync::atomic::Ordering,
@@ -6,9 +7,13 @@ use std::{
     time::Duration,
 };
 
+use anyhow::Result;
 use backend::Backend;
 use clap::Parser;
-use oma_pm::apt::{AptConfig, OmaApt, OmaAptArgs};
+use oma_pm::{
+    apt::{AptConfig, OmaApt, OmaAptArgs},
+    pkginfo::PackageInfo,
+};
 use slint::ComponentHandle;
 use tracing::{debug, info};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
@@ -67,59 +72,73 @@ fn main() {
             exit(1);
         }
 
-        main_window(package);
+        ui(package);
     } else if backend {
-        let rt = tokio::runtime::Builder::new_multi_thread()
+        tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
+            .unwrap()
+            .block_on(run_backend())
             .unwrap();
-        rt.block_on(run_backend()).unwrap();
+    } else {
+        eprintln!(
+            "Usage: {} /path/to/foo.deb",
+            current_exe().unwrap().display()
+        );
+        exit(1);
     }
 }
 
-fn main_window(arg: PathBuf) {
-    let arg = arg.display().to_string();
-
-    let mut apt = OmaApt::new(
-        vec![arg.to_string()],
-        OmaAptArgs::builder().build(),
-        false,
-        AptConfig::new(),
-    )
-    .unwrap();
-
-    let (pkgs, _) = apt.select_pkg(&[arg.as_str()], false, true, false).unwrap();
-
-    apt.install(&pkgs, true).unwrap();
-
-    let res = apt.resolve(true, false, false);
-
-    let pkg = pkgs.first().unwrap();
-
-    let info = pkg.pkg_info(&apt.cache).unwrap();
-    let info_str = info.to_string();
-
+fn ui(pkg: PathBuf) {
+    let arg = pkg.display().to_string();
     let installer = DebInstaller::new().unwrap();
 
-    installer.set_status(match res {
-        Ok(_) => "is ok to install".into(),
-        Err(e) => e.to_string().into(),
-    });
+    let info = get_package_info(&arg);
 
-    installer.set_package(pkg.raw_pkg.name().into());
-    installer.set_metadata(info_str.into());
-    installer.set_description(info.description.into());
+    let (status, info) = match info {
+        Ok(info) => ("is ok to install".to_string(), Some(info)),
+        Err(e) => (e.to_string(), None),
+    };
+
+    installer.set_status(status.into());
+
+    if let Some(info) = info {
+        installer.set_package(info.package.to_string().into());
+        installer.set_metadata(info.to_string().into());
+        installer.set_description(info.description.into());
+    }
 
     let argc = arg.to_string();
 
-    installer.on_install(move || {
-        on_install(argc.clone());
+    // TODO: Progress bar
+    installer.on_install(move || match on_install(argc.clone()) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e);
+        }
     });
 
     installer.run().unwrap();
 }
 
-fn on_install(argc: String) {
+fn get_package_info(arg: &str) -> Result<PackageInfo> {
+    let mut apt = OmaApt::new(
+        vec![arg.to_string()],
+        OmaAptArgs::builder().build(),
+        false,
+        AptConfig::new(),
+    )?;
+
+    let (pkgs, _) = apt.select_pkg(&[arg], false, true, false)?;
+    apt.install(&pkgs, true)?;
+    let pkg = pkgs.first().unwrap();
+    let info = pkg.pkg_info(&apt.cache)?;
+    apt.resolve(true, false, false)?;
+
+    Ok(info)
+}
+
+fn on_install(argc: String) -> Result<()> {
     let _ = start_backend();
 
     let rt = tokio::runtime::Builder::new_multi_thread()
@@ -127,11 +146,15 @@ fn on_install(argc: String) {
         .build()
         .unwrap();
 
-    let conn = rt.block_on(Connection::system()).unwrap();
-    let client = rt.block_on(OmaClientProxy::new(&conn)).unwrap();
+    rt.block_on(on_install_inner(argc))
+}
+
+async fn on_install_inner(argc: String) -> Result<()> {
+    let conn = Connection::system().await?;
+    let client = OmaClientProxy::new(&conn).await?;
 
     loop {
-        let Ok(_msg) = rt.block_on(client.ping()) else {
+        let Ok(_msg) = client.ping().await else {
             thread::sleep(Duration::from_millis(100));
             continue;
         };
@@ -139,44 +162,42 @@ fn on_install(argc: String) {
         break;
     }
 
-    let _res = rt
-        .block_on(send_install_request(&client, argc.clone()))
-        .unwrap();
+    let _res = send_install_request(&client, argc.clone()).await?;
 
     loop {
-        let is_finished = rt.block_on(client.is_finished()).unwrap();
-        let progress = rt.block_on(get_progress(&client)).unwrap();
+        let is_finished = client.is_finished().await?;
+        let progress = get_progress(&client).await?;
         if progress == 100 || is_finished {
-            rt.block_on(client.exit()).unwrap();
-            break;
+            client.exit().await?;
+            return Ok(());
         }
         println!("{}", progress);
         thread::sleep(Duration::from_millis(100));
     }
 }
 
-fn start_backend() -> anyhow::Result<()> {
+fn start_backend() -> Result<()> {
     Command::new("pkexec")
-        .arg(std::env::current_exe().unwrap())
+        .arg(std::env::current_exe()?)
         .arg("--backend")
         .spawn()?;
 
     Ok(())
 }
 
-async fn send_install_request(client: &OmaClientProxy<'_>, path: String) -> anyhow::Result<bool> {
+async fn send_install_request(client: &OmaClientProxy<'_>, path: String) -> Result<bool> {
     let b = client.install(path).await?;
 
     Ok(b)
 }
 
-async fn get_progress(client: &OmaClientProxy<'_>) -> anyhow::Result<u32> {
+async fn get_progress(client: &OmaClientProxy<'_>) -> Result<u32> {
     let b = client.get_progress().await?;
 
     Ok(b)
 }
 
-async fn run_backend() -> anyhow::Result<()> {
+async fn run_backend() -> Result<()> {
     let backend = Backend::default();
 
     let exit = backend.exit.clone();
