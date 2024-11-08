@@ -1,0 +1,95 @@
+import { GroupBox, HorizontalBox, GridBox, TabWidget, VerticalBox, Button, TextEdit, StandardButton } from "std-widgets.slint";
+
+export component DebInstaller inherits Window {
+    title: "DebInstaller";
+    width: 500px;
+    height: 480px;
+
+    in-out property <string> package;
+    in-out property <string> status;
+    in-out property <string> description;
+    in-out property <string> metadata;
+
+    callback install();
+
+    GroupBox {
+        width: 500px;
+        height: 480px;
+        GridLayout {
+            GridBox {
+                Row {
+                    HorizontalBox {
+                        Text {
+                            vertical-alignment: center;
+                            horizontal-alignment: left;
+                            text: @tr("Package:");
+                            width: 10%;
+                        }
+
+                        Text {
+                            vertical-alignment: center;
+                            horizontal-alignment: left;
+                            text: root.package;
+                            width: 20%;
+                        }
+                    }
+                }
+
+                Row {
+                    HorizontalBox {
+                        Text {
+                            vertical-alignment: center;
+                            horizontal-alignment: left;
+                            text: @tr("Status:");
+                            width: 10%;
+                        }
+
+                        Text {
+                            vertical-alignment: center;
+                            horizontal-alignment: left;
+                            text: root.status;
+                            width: 20%;
+                        }
+                    }
+                }
+
+                TabWidget {
+                    Tab {
+                        title: @tr("Description");
+                        Text {
+                            font-size: 14px;
+                            width: parent.width;
+                            height: parent.height;
+                            text: "Lorem ipsum dolor sit amet,\n consectetur adipisici elit";
+                        }
+                    }
+
+                    Tab {
+                        title: @tr("Details");
+                        TextEdit {
+                            font-size: 14px;
+                            width: parent.width;
+                            height: parent.height;
+                            text: root.metadata;
+                        }
+                    }
+                }
+
+                Row {
+                    HorizontalBox {
+                        Button {
+                            text: @tr("Install");
+                            clicked => {
+                                root.install();
+                            }
+                        }
+    
+                        StandardButton {
+                            kind: cancel;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
