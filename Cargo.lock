@@ -1330,6 +1330,7 @@ dependencies = [
  "anyhow",
  "apt-auth-config",
  "clap",
+ "console",
  "flume",
  "oma-fetch",
  "oma-pm",

@@ -1,7 +1,8 @@
 use std::{
     env::current_exe,
+    io::{BufRead, BufReader},
     path::PathBuf,
-    process::{exit, Command},
+    process::{exit, Child, Command, Stdio},
     sync::atomic::Ordering,
     thread::{self, JoinHandle},
     time::Duration,
@@ -15,7 +16,7 @@ use oma_pm::{
     pkginfo::PackageInfo,
 };
 use slint::ComponentHandle;
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 use zbus::{proxy, Connection, ConnectionBuilder};
 
@@ -43,6 +44,11 @@ trait OmaClient {
     async fn ping(&self) -> zbus::Result<String>;
     async fn is_finished(&self) -> zbus::Result<bool>;
     async fn exit(&self) -> zbus::Result<bool>;
+}
+
+enum Progress {
+    Percent(u32),
+    Message(String),
 }
 
 fn main() {
@@ -116,10 +122,10 @@ fn ui(pkg: PathBuf) {
     let ui_weak = installer.as_weak();
     let ui_weak_2 = ui_weak.clone();
 
-    let (tx, rx) = flume::unbounded();
+    let (progress_tx, progress_rx) = flume::unbounded();
 
     installer.on_install(move || {
-        let t = on_install(argc.clone(), tx.clone());
+        let t = on_install(argc.clone(), progress_tx.clone());
 
         let ui_weak_2 = ui_weak_2.clone();
 
@@ -128,14 +134,16 @@ fn ui(pkg: PathBuf) {
             match res {
                 Ok(_) => {
                     let _ = ui_weak_2.upgrade_in_event_loop(|ui| {
-                        ui.set_is_finished(true);
-                        ui.set_message("Install is finished.".into());
+                        let old = ui.get_message();
+                        let new_msg = format!("{}Install is finished\n", old);
+                        ui.set_message(new_msg.into());
                     });
                 }
                 Err(e) => {
                     let _ = ui_weak_2.upgrade_in_event_loop(move |ui| {
-                        ui.set_is_finished(true);
-                        ui.set_message(e.to_string().into());
+                        let old = ui.get_message();
+                        let new_msg = format!("{}{}\n", old, e);
+                        ui.set_message(new_msg.into());
                     });
                 }
             }
@@ -143,13 +151,24 @@ fn ui(pkg: PathBuf) {
     });
 
     thread::spawn(move || loop {
-        let Ok(progress) = rx.recv() else {
+        let Ok(progress) = progress_rx.recv() else {
             break;
         };
 
-        let _ = ui_weak.upgrade_in_event_loop(move |ui| {
-            ui.set_progress(progress as f32 / 100.0);
-        });
+        match progress {
+            Progress::Percent(p) => {
+                let _ = ui_weak.upgrade_in_event_loop(move |ui| {
+                    ui.set_progress(p as f32 / 100.0);
+                });
+            }
+            Progress::Message(msg) => {
+                let _ = ui_weak.upgrade_in_event_loop(move |ui| {
+                    let old = ui.get_message();
+                    let new_msg = format!("{}{}\n", old, msg);
+                    ui.set_message(new_msg.into());
+                });
+            }
+        }
     });
 
     installer.run().unwrap();
@@ -172,14 +191,49 @@ fn get_package_info(arg: &str) -> Result<PackageInfo> {
     Ok(info)
 }
 
-fn on_install(argc: String, tx: flume::Sender<u32>) -> JoinHandle<Result<()>> {
-    let t = thread::spawn(move || {
-        let _ = start_backend();
+fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {
+    let t = thread::spawn(move || -> Result<()> {
+        let mut child = start_backend()?;
+        let txc = tx.clone();
+        let txc2 = tx.clone();
+
+        thread::spawn(move || {
+            if let Some(out) = child.stdout.take() {
+                let reader = BufReader::new(out);
+                reader.lines().for_each(|line| match line {
+                    Ok(line) => {
+                        if let Err(e) = txc.send(Progress::Message(
+                            console::strip_ansi_codes(&line).to_string(),
+                        )) {
+                            error!("{e}");
+                        }
+                    }
+                    Err(e) => {
+                        error!("{e}")
+                    }
+                });
+            }
+        });
+
+        thread::spawn(move || {
+            if let Some(out) = child.stderr.take() {
+                let reader = BufReader::new(out);
+                reader.lines().for_each(|line| match line {
+                    Ok(line) => {
+                        if let Err(e) = txc2.send(Progress::Message(line)) {
+                            error!("{e}");
+                        }
+                    }
+                    Err(e) => {
+                        error!("{e}")
+                    }
+                });
+            }
+        });
 
         let rt = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
-            .build()
-            .unwrap();
+            .build()?;
 
         rt.block_on(on_install_inner(argc, tx))
     });
@@ -187,7 +241,7 @@ fn on_install(argc: String, tx: flume::Sender<u32>) -> JoinHandle<Result<()>> {
     t
 }
 
-async fn on_install_inner(argc: String, tx: flume::Sender<u32>) -> Result<()> {
+async fn on_install_inner(argc: String, tx: flume::Sender<Progress>) -> Result<()> {
     let conn = Connection::system().await?;
     let client = OmaClientProxy::new(&conn).await?;
 
@@ -206,7 +260,7 @@ async fn on_install_inner(argc: String, tx: flume::Sender<u32>) -> Result<()> {
         let is_finished = client.is_finished().await?;
         let progress = get_progress(&client).await?;
 
-        tx.send_async(progress).await?;
+        tx.send_async(Progress::Percent(progress)).await?;
 
         if progress == 100 || is_finished {
             client.exit().await?;
@@ -217,13 +271,15 @@ async fn on_install_inner(argc: String, tx: flume::Sender<u32>) -> Result<()> {
     }
 }
 
-fn start_backend() -> Result<()> {
-    Command::new("pkexec")
+fn start_backend() -> Result<Child> {
+    let child = Command::new("pkexec")
         .arg(std::env::current_exe()?)
         .arg("--backend")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()?;
 
-    Ok(())
+    Ok(child)
 }
 
 async fn send_install_request(client: &OmaClientProxy<'_>, path: String) -> Result<bool> {
