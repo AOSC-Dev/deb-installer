@@ -115,7 +115,7 @@ fn main() {
             exit(1);
         }
 
-        ui(package);
+        ui(package.canonicalize().unwrap());
     } else if backend {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -134,6 +134,13 @@ fn main() {
 
 fn ui(pkg: PathBuf) {
     let arg = pkg.display().to_string();
+
+    let debconf_helper = start_kde_debconf();
+
+    if let Err(e) = debconf_helper {
+        error!("Failed to start debconf-kde-helper: {e}");
+    }
+
     let installer = DebInstaller::new().unwrap();
 
     let info = get_package_info(&arg);
@@ -228,11 +235,6 @@ fn get_package_info(arg: &str) -> Result<PackageInfo> {
 fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {
     let t = thread::spawn(move || -> Result<()> {
         let mut backend_child = start_backend()?;
-        let debconf_helper = start_kde_debconf();
-
-        if let Err(e) = debconf_helper {
-            error!("Failed to start debconf-kde-helper: {e}");
-        }
 
         let txc = tx.clone();
         let txc2 = tx.clone();
