@@ -16,7 +16,7 @@ use oma_pm::{
     pkginfo::PackageInfo,
 };
 use slint::ComponentHandle;
-use tracing::{debug, error, info, level_filters::LevelFilter};
+use tracing::{debug, error, level_filters::LevelFilter};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 use zbus::{proxy, Connection, ConnectionBuilder};
 
