@@ -16,111 +16,122 @@ export component DebInstaller inherits Window {
     callback install();
     in-out property <string> message;
 
-    if (!is-install) : GroupBox {
-        width: 500px;
-        height: 480px;
-        GridLayout {
-            GridBox {
-                Row {
-                    HorizontalBox {
-                        Text {
-                            vertical-alignment: center;
-                            horizontal-alignment: left;
-                            text: @tr("Package:");
-                            width: 10%;
-                        }
-
-                        Text {
-                            vertical-alignment: center;
-                            horizontal-alignment: left;
-                            text: root.package;
-                            width: 20%;
-                        }
-                    }
+    if (!is-install): GroupBox {
+        width: 100%;
+        height: 100%;
+        VerticalLayout {
+            HorizontalBox {
+                Text {
+                    vertical-alignment: center;
+                    horizontal-alignment: left;
+                    text: @tr("Package:");
+                    width: 10%;
                 }
 
-                Row {
-                    HorizontalBox {
-                        Text {
-                            vertical-alignment: center;
-                            horizontal-alignment: left;
-                            text: @tr("Status:");
-                            width: 10%;
-                        }
+                Text {
+                    vertical-alignment: center;
+                    horizontal-alignment: left;
+                    text: root.package;
+                    width: 10%;
+                }
+            }
 
-                        Text {
-                            vertical-alignment: center;
-                            horizontal-alignment: left;
-                            text: root.status;
-                            width: 20%;
-                        }
-                    }
+            HorizontalBox {
+                Text {
+                    vertical-alignment: center;
+                    horizontal-alignment: left;
+                    text: @tr("Status:");
+                    width: 10%;
                 }
 
-                TabWidget {
-                    Tab {
-                        title: @tr("Description");
-                        TextEdit {
+                Text {
+                    vertical-alignment: center;
+                    horizontal-alignment: left;
+                    text: root.status;
+                    width: 10%;
+                }
+            }
+
+            TabWidget {
+                Tab {
+                    title: @tr("Description");
+                    Rectangle {
+                        background: #ffff;
+                        TextInput {
+                            // color: #0000;
                             font-size: 14px;
-                            width: parent.width;
-                            height: parent.height;
+                            width: 100%;
+                            height: 100%;
+                            wrap: word-wrap;
                             text: root.description;
                             read-only: true;
-                        }
-                    }
-
-                    Tab {
-                        title: @tr("Details");
-                        TextEdit {
-                            font-size: 14px;
-                            width: parent.width;
-                            height: parent.height;
-                            text: root.metadata;
-                            read-only: true;
+                            single-line: false;
                         }
                     }
                 }
 
-                Row {
-                    HorizontalBox {
-                        Button {
-                            text: @tr("Install");
-                            clicked => {
-                                root.is-install = true;
-                                root.install();
-                            }
-                        }
-
-                        StandardButton {
-                            kind: cancel;
+                Tab {
+                    title: @tr("Details");
+                    Rectangle {
+                        background: #ffff;
+                        TextInput {
+                            // color: #0000;
+                            font-size: 14px;
+                            width: 100%;
+                            height: 100%;
+                            wrap: word-wrap;
+                            text: root.metadata;
+                            read-only: true;
+                            single-line: false;
                         }
                     }
+                }
+            }
+
+            HorizontalBox {
+                Button {
+                    text: @tr("Install");
+                    clicked => {
+                        root.is-install = true;
+                        root.install();
+                    }
+                }
+
+                StandardButton {
+                    kind: cancel;
                 }
             }
         }
     }
 
-    if (root.is-install): GridBox {
+    if (root.is-install): GroupBox {
         width: 100%;
         height: 100%;
-        spacing: 16px;
 
-        Row {
-            progress-indicator := ProgressIndicator {
-                row: 0;
-                col: 0;
-                min-width: 160px;
-                progress: root.progress;
+        VerticalLayout {
+            HorizontalBox {
+                progress-indicator := ProgressIndicator {
+                    min-width: 160px;
+                    progress: root.progress;
+                }
+    
+                Text {
+                    vertical-alignment: center;
+                    horizontal-alignment: left;
+                    text: root.progress * 100 + "%";
+                }
             }
-        }
 
-        Row {
             Rectangle {
-                TextEdit {
+                background: #000;
+                TextInput {
+                    font-family: "monospace";
+                    color: #ffff;
                     width: 100%;
                     height: 100%;
                     text: root.message;
                     read-only: true;
+                    single-line: false;
                 }
             }
         }
