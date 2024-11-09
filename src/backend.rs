@@ -94,7 +94,6 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
 #[interface(name = "io.aosc.DebInstaller1")]
 impl Backend {
     fn install(&mut self, path: String) -> bool {
-        dbg!("qaq");
         let pmc = self.pm.clone();
         let install_pm_clone = self.install_pm.clone();
         let thread = Some(thread::spawn(move || -> anyhow::Result<()> {

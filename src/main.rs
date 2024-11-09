@@ -16,7 +16,7 @@ use oma_pm::{
     pkginfo::PackageInfo,
 };
 use slint::ComponentHandle;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, level_filters::LevelFilter};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 use zbus::{proxy, Connection, ConnectionBuilder};
 
@@ -31,6 +31,8 @@ struct Args {
     package: Option<PathBuf>,
     #[clap(long)]
     backend: bool,
+    #[clap(long, short)]
+    debug: bool,
 }
 
 #[proxy(
@@ -52,20 +54,52 @@ enum Progress {
 }
 
 fn main() {
-    let Args { package, backend } = Args::parse();
+    let Args {
+        package,
+        backend,
+        debug,
+    } = Args::parse();
 
-    let debug_filter: EnvFilter = "hyper=off,rustls=off,debug".parse().unwrap();
-    tracing_subscriber::registry()
-        .with(
-            fmt::layer()
-                .event_format(
-                    tracing_subscriber::fmt::format()
-                        .with_file(true)
-                        .with_line_number(true),
+    if !debug {
+        let no_i18n_embd_info: EnvFilter = "i18n_embed=off,info".parse().unwrap();
+
+        tracing_subscriber::registry()
+            .with(
+                fmt::layer()
+                    .with_filter(no_i18n_embd_info)
+                    .and_then(LevelFilter::INFO),
+            )
+            .init();
+    } else {
+        let env_log = EnvFilter::try_from_default_env();
+
+        if let Ok(filter) = env_log {
+            tracing_subscriber::registry()
+                .with(
+                    fmt::layer()
+                        .event_format(
+                            tracing_subscriber::fmt::format()
+                                .with_file(true)
+                                .with_line_number(true),
+                        )
+                        .with_filter(filter),
                 )
-                .with_filter(debug_filter),
-        )
-        .init();
+                .init();
+        } else {
+            let debug_filter: EnvFilter = "hyper=off,rustls=off,debug".parse().unwrap();
+            tracing_subscriber::registry()
+                .with(
+                    fmt::layer()
+                        .event_format(
+                            tracing_subscriber::fmt::format()
+                                .with_file(true)
+                                .with_line_number(true),
+                        )
+                        .with_filter(debug_filter),
+                )
+                .init();
+        }
+    }
 
     if let Some(package) = package {
         if !package.exists() {
