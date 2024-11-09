@@ -343,7 +343,7 @@ async fn run_backend() -> Result<()> {
 
     loop {
         if exit.load(Ordering::Relaxed) {
-            info!("Bye.");
+            debug!("Bye.");
             return Ok(());
         }
 
