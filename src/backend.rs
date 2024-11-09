@@ -1,4 +1,5 @@
 use std::{
+    env,
     sync::{
         atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
         Arc,
@@ -97,6 +98,9 @@ impl Backend {
         let pmc = self.pm.clone();
         let install_pm_clone = self.install_pm.clone();
         let thread = Some(thread::spawn(move || -> anyhow::Result<()> {
+            env::set_var("DEBIAN_FRONTEND", "passthrough");
+            env::set_var("DEBCONF_PIPE", "/tmp/debkonf-sock");
+
             let mut apt = OmaApt::new(
                 vec![path.to_string()],
                 OmaAptArgs::builder().build(),

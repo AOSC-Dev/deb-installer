@@ -227,12 +227,18 @@ fn get_package_info(arg: &str) -> Result<PackageInfo> {
 
 fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {
     let t = thread::spawn(move || -> Result<()> {
-        let mut child = start_backend()?;
+        let mut backend_child = start_backend()?;
+        let debconf_helper = start_kde_debconf();
+
+        if let Err(e) = debconf_helper {
+            error!("Failed to start debconf-kde-helper: {e}");
+        }
+
         let txc = tx.clone();
         let txc2 = tx.clone();
 
         thread::spawn(move || {
-            if let Some(out) = child.stdout.take() {
+            if let Some(out) = backend_child.stdout.take() {
                 let reader = BufReader::new(out);
                 reader.lines().for_each(|line| match line {
                     Ok(line) => {
@@ -250,7 +256,7 @@ fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()
         });
 
         thread::spawn(move || {
-            if let Some(out) = child.stderr.take() {
+            if let Some(out) = backend_child.stderr.take() {
                 let reader = BufReader::new(out);
                 reader.lines().for_each(|line| match line {
                     Ok(line) => {
@@ -314,6 +320,10 @@ fn start_backend() -> Result<Child> {
         .spawn()?;
 
     Ok(child)
+}
+
+fn start_kde_debconf() -> Result<Child> {
+    Ok(Command::new("debconf-kde-helper").spawn()?)
 }
 
 async fn run_backend() -> Result<()> {
