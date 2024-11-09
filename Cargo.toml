@@ -10,9 +10,9 @@ oma-pm = { git = "https://github.com/AOSC-Dev/oma/", package = "oma-pm", rev = "
 reqwest = "0.12"
 apt-auth-config =  { git = "https://github.com/AOSC-Dev/oma/", package = "apt-auth-config", rev = "98a5163833c1c925b419f64ceca607407c31d588" }
 oma-fetch = { git = "https://github.com/AOSC-Dev/oma/", package = "oma-fetch", rev = "98a5163833c1c925b419f64ceca607407c31d588"}
-rustix = { version = "0.38", features = ["process"] }
 tracing = "0.1"
 zbus = { version = "4.4",  features = ["tokio"] }
 tokio = { version = "1.41", features = ["rt", "rt-multi-thread"] }
 clap = { version = "4", features = ["derive"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+flume = "0.11.1"
