@@ -114,11 +114,32 @@ fn ui(pkg: PathBuf) {
     let argc = arg.to_string();
 
     let ui_weak = installer.as_weak();
+    let ui_weak_2 = ui_weak.clone();
 
     let (tx, rx) = flume::unbounded();
 
     installer.on_install(move || {
         let t = on_install(argc.clone(), tx.clone());
+
+        let ui_weak_2 = ui_weak_2.clone();
+
+        thread::spawn(move || {
+            let res = t.join().unwrap();
+            match res {
+                Ok(_) => {
+                    let _ = ui_weak_2.upgrade_in_event_loop(|ui| {
+                        ui.set_is_finished(true);
+                        ui.set_message("Install is finished.".into());
+                    });
+                }
+                Err(e) => {
+                    let _ = ui_weak_2.upgrade_in_event_loop(move |ui| {
+                        ui.set_is_finished(true);
+                        ui.set_message(e.to_string().into());
+                    });
+                }
+            }
+        });
     });
 
     thread::spawn(move || loop {
@@ -126,7 +147,9 @@ fn ui(pkg: PathBuf) {
             break;
         };
 
-        let _ = ui_weak.upgrade_in_event_loop(move |ui| ui.set_progress(progress as f32 / 100.0));
+        let _ = ui_weak.upgrade_in_event_loop(move |ui| {
+            ui.set_progress(progress as f32 / 100.0);
+        });
     });
 
     installer.run().unwrap();

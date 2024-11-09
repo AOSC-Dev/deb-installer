@@ -14,6 +14,8 @@ export component DebInstaller inherits Window {
     private property <bool> is-install;
 
     callback install();
+    in-out property <bool> is-finished;
+    in-out property <string> message;
 
     if (!is-install) : GroupBox {
         width: 500px;
@@ -107,6 +109,17 @@ export component DebInstaller inherits Window {
             col: 0;
             min-width: 160px;
             progress: root.progress;
+        }
+    }
+
+    if (root.is-finished): GridBox  {
+        width: 100%;
+        height: 100%;
+
+        Text {
+            vertical-alignment: center;
+            horizontal-alignment: left;
+            text: root.message;
         }
     }
 }
