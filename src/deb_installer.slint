@@ -10,11 +10,12 @@ export component DebInstaller inherits Window {
     in-out property <string> description;
     in-out property <string> metadata;
     in-out property <float> progress;
+    in-out property <string> message;
 
     private property <bool> is-install;
 
     callback install();
-    in-out property <string> message;
+    callback close();
 
     if (!is-install): GroupBox {
         width: 100%;
@@ -99,6 +100,9 @@ export component DebInstaller inherits Window {
 
                 StandardButton {
                     kind: cancel;
+                    clicked => {
+                        root.close();
+                    }
                 }
             }
         }

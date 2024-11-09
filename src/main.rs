@@ -2,7 +2,7 @@ use std::{
     env::current_exe,
     io::{BufRead, BufReader},
     path::PathBuf,
-    process::{exit, Child, Command, Stdio},
+    process::{self, exit, Child, Command, Stdio},
     sync::atomic::Ordering,
     thread::{self, JoinHandle},
     time::Duration,
@@ -189,6 +189,10 @@ fn ui(pkg: PathBuf) {
                 }
             }
         });
+    });
+
+    installer.on_close(|| {
+        process::exit(0);
     });
 
     thread::spawn(move || loop {
