@@ -288,11 +288,11 @@ async fn on_install_inner(argc: String, tx: flume::Sender<Progress>) -> Result<(
         break;
     }
 
-    let _res = send_install_request(&client, argc.clone()).await?;
+    client.install(argc).await?;
 
     loop {
         let is_finished = client.is_finished().await?;
-        let progress = get_progress(&client).await?;
+        let progress = client.get_progress().await?;
 
         tx.send_async(Progress::Percent(progress)).await?;
 
@@ -314,18 +314,6 @@ fn start_backend() -> Result<Child> {
         .spawn()?;
 
     Ok(child)
-}
-
-async fn send_install_request(client: &OmaClientProxy<'_>, path: String) -> Result<bool> {
-    let b = client.install(path).await?;
-
-    Ok(b)
-}
-
-async fn get_progress(client: &OmaClientProxy<'_>) -> Result<u32> {
-    let b = client.get_progress().await?;
-
-    Ok(b)
 }
 
 async fn run_backend() -> Result<()> {
