@@ -254,7 +254,7 @@ dependencies = [
 [[package]]
 name = "apt-auth-config"
 version = "0.1.0"
-source = "git+https://github.com/AOSC-Dev/oma/?rev=dd02e6524d64ae7d30604cd300ad6b348d55922d#dd02e6524d64ae7d30604cd300ad6b348d55922d"
+source = "git+https://github.com/AOSC-Dev/oma/?rev=2649c5ad4ce63fecb013f05380d734e537af3c9f#2649c5ad4ce63fecb013f05380d734e537af3c9f"
 dependencies = [
  "rustix",
  "thiserror",
@@ -3538,7 +3538,7 @@ dependencies = [
 [[package]]
 name = "oma-console"
 version = "0.21.1"
-source = "git+https://github.com/AOSC-Dev/oma/?rev=dd02e6524d64ae7d30604cd300ad6b348d55922d#dd02e6524d64ae7d30604cd300ad6b348d55922d"
+source = "git+https://github.com/AOSC-Dev/oma/?rev=2649c5ad4ce63fecb013f05380d734e537af3c9f#2649c5ad4ce63fecb013f05380d734e537af3c9f"
 dependencies = [
  "console",
  "termbg-with-async-stdin",
@@ -3550,7 +3550,7 @@ dependencies = [
 [[package]]
 name = "oma-fetch"
 version = "0.17.0"
-source = "git+https://github.com/AOSC-Dev/oma/?rev=dd02e6524d64ae7d30604cd300ad6b348d55922d#dd02e6524d64ae7d30604cd300ad6b348d55922d"
+source = "git+https://github.com/AOSC-Dev/oma/?rev=2649c5ad4ce63fecb013f05380d734e537af3c9f#2649c5ad4ce63fecb013f05380d734e537af3c9f"
 dependencies = [
  "async-compression",
  "bon",
@@ -3570,7 +3570,7 @@ dependencies = [
 [[package]]
 name = "oma-pm"
 version = "0.38.1"
-source = "git+https://github.com/AOSC-Dev/oma/?rev=dd02e6524d64ae7d30604cd300ad6b348d55922d#dd02e6524d64ae7d30604cd300ad6b348d55922d"
+source = "git+https://github.com/AOSC-Dev/oma/?rev=2649c5ad4ce63fecb013f05380d734e537af3c9f#2649c5ad4ce63fecb013f05380d734e537af3c9f"
 dependencies = [
  "ahash",
  "apt-auth-config",
@@ -3598,7 +3598,7 @@ dependencies = [
 [[package]]
 name = "oma-pm-operation-type"
 version = "0.5.1"
-source = "git+https://github.com/AOSC-Dev/oma/?rev=dd02e6524d64ae7d30604cd300ad6b348d55922d#dd02e6524d64ae7d30604cd300ad6b348d55922d"
+source = "git+https://github.com/AOSC-Dev/oma/?rev=2649c5ad4ce63fecb013f05380d734e537af3c9f#2649c5ad4ce63fecb013f05380d734e537af3c9f"
 dependencies = [
  "bon",
  "oma-utils 0.9.1",
@@ -3621,7 +3621,7 @@ dependencies = [
 [[package]]
 name = "oma-utils"
 version = "0.9.1"
-source = "git+https://github.com/AOSC-Dev/oma/?rev=dd02e6524d64ae7d30604cd300ad6b348d55922d#dd02e6524d64ae7d30604cd300ad6b348d55922d"
+source = "git+https://github.com/AOSC-Dev/oma/?rev=2649c5ad4ce63fecb013f05380d734e537af3c9f#2649c5ad4ce63fecb013f05380d734e537af3c9f"
 dependencies = [
  "logind-zbus",
  "number_prefix",
