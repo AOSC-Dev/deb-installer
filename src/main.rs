@@ -3,7 +3,10 @@ use std::{
     io::{BufRead, BufReader},
     path::PathBuf,
     process::{self, exit, Child, Command, Stdio},
-    sync::atomic::Ordering,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     thread::{self, JoinHandle},
     time::Duration,
 };
@@ -137,8 +140,11 @@ fn ui(pkg: PathBuf) {
 
     let debconf_helper = start_kde_debconf();
 
-    if let Err(e) = debconf_helper {
-        error!("Failed to start debconf-kde-helper: {e}");
+    let mut debconf_child = None;
+
+    match debconf_helper {
+        Err(e) => error!("Failed to start debconf-kde-helper: {e}"),
+        Ok(child) => debconf_child = Some(child),
     }
 
     let installer = DebInstaller::new().unwrap();
@@ -192,9 +198,38 @@ fn ui(pkg: PathBuf) {
         });
     });
 
-    installer.on_close(|| {
-        process::exit(0);
+    let kill_debconf = Arc::new(AtomicBool::new(false));
+    let can_exit = Arc::new(AtomicBool::new(false));
+    let cec = can_exit.clone();
+    let cec2 = can_exit.clone();
+    let kc = kill_debconf.clone();
+    let kc2 = kill_debconf.clone();
+
+    // 关闭按钮
+    installer.on_close(move || {
+        // 杀掉 debconf helper 进程
+        kill_debconf.store(true, Ordering::SeqCst);
+        // 等待是否可以退出
+        while !cec.load(Ordering::SeqCst) {}
+        process::exit(0)
     });
+
+    installer.window().on_close_requested(move || {
+        kc2.store(true, Ordering::SeqCst);
+        while !cec2.load(Ordering::SeqCst) {}
+        slint::CloseRequestResponse::HideWindow
+    });
+
+    if let Some(mut child) = debconf_child {
+        thread::spawn(move || loop {
+            if kc.load(Ordering::SeqCst) {
+                let _ = child.kill();
+                can_exit.store(true, Ordering::SeqCst);
+                break;
+            }
+            thread::sleep(Duration::from_millis(100));
+        });
+    }
 
     thread::spawn(move || loop {
         let Ok(progress) = progress_rx.recv() else {
