@@ -91,7 +91,7 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
     }
 
     fn no_interactive(&self) -> bool {
-        false
+        which::which("debconf-kde-helper").is_err()
     }
 
     fn use_pty(&self) -> bool {

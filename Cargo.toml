@@ -17,3 +17,4 @@ clap = { version = "4", features = ["derive"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 flume = "0.11.1"
 console = "0.15"
+which = "7"
