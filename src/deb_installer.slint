@@ -11,7 +11,7 @@ export component DebInstaller inherits Window {
     in-out property <string> metadata;
     in-out property <float> progress;
     in-out property <string> message;
-
+    in-out property <bool> can-install;
     private property <bool> is-install;
 
     callback install();
@@ -96,6 +96,7 @@ export component DebInstaller inherits Window {
                         root.is-install = true;
                         root.install();
                     }
+                    enabled: root.can-install;
                 }
 
                 StandardButton {

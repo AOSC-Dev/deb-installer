@@ -145,11 +145,12 @@ fn ui(pkg: PathBuf) {
 
     let info = get_package_info(&arg);
 
-    let (status, info) = match info {
-        Ok(info) => ("is ok to install".to_string(), Some(info)),
-        Err(e) => (e.to_string(), None),
+    let (status, info, can_install) = match info {
+        Ok(info) => ("is ok to install".to_string(), Some(info), true),
+        Err(e) => (e.to_string(), None, false),
     };
 
+    installer.set_can_install(can_install);
     installer.set_status(status.into());
 
     if let Some(info) = info {
