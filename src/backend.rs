@@ -1,5 +1,5 @@
 use std::{
-    // env,
+    env,
     sync::{
         atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
         Arc,
@@ -84,11 +84,18 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
         steps_done: u64,
         total_steps: u64,
         _config: &AptConfig,
-        _no_progress: bool,
     ) {
         let percent = steps_done as f32 / total_steps as f32;
         let percent = (percent * 100.0).round() as u32;
         self.progress.store(percent, Ordering::SeqCst);
+    }
+
+    fn no_interactive(&self) -> bool {
+        false
+    }
+
+    fn use_pty(&self) -> bool {
+        false
     }
 }
 
@@ -98,8 +105,8 @@ impl Backend {
         let pmc = self.pm.clone();
         let install_pm_clone = self.install_pm.clone();
         let thread = Some(thread::spawn(move || -> anyhow::Result<()> {
-            // env::set_var("DEBIAN_FRONTEND", "passthrough");
-            // env::set_var("DEBCONF_PIPE", "/tmp/debkonf-sock");
+            env::set_var("DEBIAN_FRONTEND", "passthrough");
+            env::set_var("DEBCONF_PIPE", "/tmp/debkonf-sock");
 
             let mut apt = OmaApt::new(
                 vec![path.to_string()],

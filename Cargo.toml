@@ -6,10 +6,10 @@ edition = "2021"
 [dependencies]
 anyhow = { version = "1", features = ["backtrace"] }
 slint = "1.8.0"
-oma-pm = { git = "https://github.com/AOSC-Dev/oma/", package = "oma-pm", rev = "98a5163833c1c925b419f64ceca607407c31d588"}
+oma-pm = { git = "https://github.com/AOSC-Dev/oma/", package = "oma-pm", rev = "dd02e6524d64ae7d30604cd300ad6b348d55922d"}
 reqwest = "0.12"
-apt-auth-config =  { git = "https://github.com/AOSC-Dev/oma/", package = "apt-auth-config", rev = "98a5163833c1c925b419f64ceca607407c31d588" }
-oma-fetch = { git = "https://github.com/AOSC-Dev/oma/", package = "oma-fetch", rev = "98a5163833c1c925b419f64ceca607407c31d588"}
+apt-auth-config =  { git = "https://github.com/AOSC-Dev/oma/", package = "apt-auth-config", rev = "dd02e6524d64ae7d30604cd300ad6b348d55922d" }
+oma-fetch = { git = "https://github.com/AOSC-Dev/oma/", package = "oma-fetch", rev = "dd02e6524d64ae7d30604cd300ad6b348d55922d"}
 tracing = "0.1"
 zbus = { version = "4.4",  features = ["tokio"] }
 tokio = { version = "1.41", features = ["rt", "rt-multi-thread"] }

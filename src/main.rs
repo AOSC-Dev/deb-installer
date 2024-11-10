@@ -135,11 +135,11 @@ fn main() {
 fn ui(pkg: PathBuf) {
     let arg = pkg.display().to_string();
 
-    // let debconf_helper = start_kde_debconf();
+    let debconf_helper = start_kde_debconf();
 
-    // if let Err(e) = debconf_helper {
-    //     error!("Failed to start debconf-kde-helper: {e}");
-    // }
+    if let Err(e) = debconf_helper {
+        error!("Failed to start debconf-kde-helper: {e}");
+    }
 
     let installer = DebInstaller::new().unwrap();
 
@@ -328,9 +328,9 @@ fn start_backend() -> Result<Child> {
     Ok(child)
 }
 
-// fn start_kde_debconf() -> Result<Child> {
-//     Ok(Command::new("debconf-kde-helper").spawn()?)
-// }
+fn start_kde_debconf() -> Result<Child> {
+    Ok(Command::new("debconf-kde-helper").spawn()?)
+}
 
 async fn run_backend() -> Result<()> {
     let backend = Backend::default();
