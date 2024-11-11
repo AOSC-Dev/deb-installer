@@ -198,38 +198,7 @@ fn ui(pkg: PathBuf) {
         });
     });
 
-    let kill_debconf = Arc::new(AtomicBool::new(false));
-    let can_exit = Arc::new(AtomicBool::new(false));
-    let cec = can_exit.clone();
-    let cec2 = can_exit.clone();
-    let kc = kill_debconf.clone();
-    let kc2 = kill_debconf.clone();
-
-    // 关闭按钮
-    installer.on_close(move || {
-        // 杀掉 debconf helper 进程
-        kill_debconf.store(true, Ordering::SeqCst);
-        // 等待是否可以退出
-        while !cec.load(Ordering::SeqCst) {}
-        process::exit(0)
-    });
-
-    installer.window().on_close_requested(move || {
-        kc2.store(true, Ordering::SeqCst);
-        while !cec2.load(Ordering::SeqCst) {}
-        slint::CloseRequestResponse::HideWindow
-    });
-
-    if let Some(mut child) = debconf_child {
-        thread::spawn(move || loop {
-            if kc.load(Ordering::SeqCst) {
-                let _ = child.kill();
-                can_exit.store(true, Ordering::SeqCst);
-                break;
-            }
-            thread::sleep(Duration::from_millis(100));
-        });
-    }
+    handle_exit(&installer, debconf_child);
 
     thread::spawn(move || loop {
         let Ok(progress) = progress_rx.recv() else {
@@ -253,6 +222,43 @@ fn ui(pkg: PathBuf) {
     });
 
     installer.run().unwrap();
+}
+
+fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
+    let kill_debconf = Arc::new(AtomicBool::new(false));
+    let can_exit = Arc::new(AtomicBool::new(false));
+    let cec = can_exit.clone();
+    let cec2 = can_exit.clone();
+    let kc = kill_debconf.clone();
+    let kc2 = kill_debconf.clone();
+
+    // 关闭按钮
+    installer.on_close(move || {
+        // 杀掉 debconf helper 进程
+        kill_debconf.store(true, Ordering::SeqCst);
+        // 等待是否可以退出
+        while !cec.load(Ordering::SeqCst) {}
+        process::exit(0)
+    });
+
+    // 窗口关闭按钮
+    installer.window().on_close_requested(move || {
+        kc2.store(true, Ordering::SeqCst);
+        while !cec2.load(Ordering::SeqCst) {}
+        slint::CloseRequestResponse::HideWindow
+    });
+
+    if let Some(mut child) = debconf_child {
+        thread::spawn(move || loop {
+            // 接收杀死 debconf-helper 请求
+            if kc.load(Ordering::SeqCst) {
+                let _ = child.kill();
+                can_exit.store(true, Ordering::SeqCst);
+                break;
+            }
+            thread::sleep(Duration::from_millis(100));
+        });
+    }
 }
 
 fn get_package_info(arg: &str) -> Result<PackageInfo> {
