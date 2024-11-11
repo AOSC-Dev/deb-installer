@@ -151,21 +151,7 @@ fn ui(pkg: PathBuf) {
 
     let installer = DebInstaller::new().unwrap();
 
-    let info = get_package_info(&arg);
-
-    let (status, info, can_install) = match info {
-        Ok(info) => ("is ok to install".to_string(), Some(info), true),
-        Err(e) => (e.to_string(), None, false),
-    };
-
-    installer.set_can_install(can_install);
-    installer.set_status(status.into());
-
-    if let Some(info) = info {
-        installer.set_package(info.package.to_string().into());
-        installer.set_metadata(info.to_string().into());
-        installer.set_description(info.description.into());
-    }
+    set_info(&arg, &installer);
 
     let argc = arg.to_string();
 
@@ -226,6 +212,47 @@ fn ui(pkg: PathBuf) {
     installer.run().unwrap();
 }
 
+fn set_info(arg: &str, installer: &DebInstaller) {
+    let apt = OmaApt::new(
+        vec![arg.to_string()],
+        OmaAptArgs::builder().build(),
+        false,
+        AptConfig::new(),
+    );
+
+    match apt {
+        Ok(mut apt) => {
+            let info = get_package_info(&mut apt, arg);
+            let resolve_res = apt.resolve(true, false, false);
+
+            let (mut status, info, mut can_install) = match info {
+                Ok(info) => ("is ok to install".to_string(), Some(info), true),
+                Err(e) => (e.to_string(), None, false),
+            };
+
+            match resolve_res {
+                Ok(_) => {}
+                Err(e) => {
+                    status = e.to_string();
+                    can_install = false;
+                }
+            }
+
+            installer.set_can_install(can_install);
+            installer.set_status(status.into());
+
+            if let Some(info) = info {
+                installer.set_package(info.package.to_string().into());
+                installer.set_metadata(info.to_string().into());
+                installer.set_description(info.description.into());
+            }
+        }
+        Err(e) => {
+            installer.set_status(e.to_string().into());
+        }
+    };
+}
+
 fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
     let kill_debconf = Arc::new(AtomicBool::new(false));
     let can_exit = Arc::new(AtomicBool::new(false));
@@ -263,19 +290,11 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
     }
 }
 
-fn get_package_info(arg: &str) -> Result<PackageInfo> {
-    let mut apt = OmaApt::new(
-        vec![arg.to_string()],
-        OmaAptArgs::builder().build(),
-        false,
-        AptConfig::new(),
-    )?;
-
+fn get_package_info(apt: &mut OmaApt, arg: &str) -> Result<PackageInfo> {
     let (pkgs, _) = apt.select_pkg(&[arg], false, true, false)?;
     apt.install(&pkgs, true)?;
     let pkg = pkgs.first().unwrap();
     let info = pkg.pkg_info(&apt.cache)?;
-    apt.resolve(true, false, false)?;
 
     Ok(info)
 }
