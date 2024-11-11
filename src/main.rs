@@ -245,6 +245,8 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                 installer.set_package(info.package.to_string().into());
                 installer.set_metadata(info.to_string().into());
                 installer.set_description(info.description.into());
+                installer.set_version(info.version.to_string().into());
+                installer.set_installed_size(info.install_size.to_string().into());
             }
         }
         Err(e) => {
