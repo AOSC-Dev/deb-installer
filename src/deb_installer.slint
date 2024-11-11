@@ -1,13 +1,15 @@
 import { GroupBox, HorizontalBox, GridBox, TabWidget, VerticalBox, Button, TextEdit, StandardButton, ProgressIndicator, Spinner, CheckBox } from "std-widgets.slint";
 
 export component DebInstaller inherits Window {
-    title: "DebInstaller";
+    title: @tr("Package Installation Wizard");
     width: 500px;
-    height: 480px;
+    height: 260px;
 
     in-out property <string> package;
     in-out property <string> status;
     in-out property <string> description;
+    in-out property <string> version;
+    in-out property <string> installed-size;
     in-out property <string> metadata;
     in-out property <float> progress;
     in-out property <string> message;
@@ -17,127 +19,121 @@ export component DebInstaller inherits Window {
     callback install();
     callback close();
 
-    if (!is-install): GroupBox {
-        width: 100%;
-        height: 100%;
-        VerticalLayout {
-            HorizontalBox {
-                Text {
-                    vertical-alignment: center;
-                    horizontal-alignment: left;
-                    text: @tr("Package:");
-                    width: 10%;
-                }
+    if (!is-install): VerticalLayout {
+        GridBox {
+            Row {
+                VerticalBox {
+                    vertical-stretch: 0;
+                    padding-top: -10px;
+                    padding-left: 15px;
 
-                Text {
-                    vertical-alignment: center;
-                    horizontal-alignment: left;
-                    text: root.package;
-                    width: 10%;
-                }
-            }
+                    HorizontalBox {
+                        vertical-stretch: 0;
+                        padding-left: 0px;
+                        Text {
+                            vertical-alignment: top;
+                            horizontal-alignment: left;
+                            font-size: 26px;
+                            font-weight: 600;
+                            text: root.package;
+                        }
+                    }
+                    
+                    HorizontalBox {
+                        vertical-stretch: 0;
+                        padding-top: -25px;
+                        padding-left: 0px;
+                        Text {
+                            vertical-alignment: top;
+                            horizontal-alignment: left;
+                            text: root.version + "·" + root.installed-size + "·" + root.status;
+                        }
+                    }
 
-            HorizontalBox {
-                Text {
-                    vertical-alignment: center;
-                    horizontal-alignment: left;
-                    text: @tr("Status:");
-                    width: 10%;
-                }
-
-                Text {
-                    vertical-alignment: center;
-                    horizontal-alignment: left;
-                    text: root.status;
-                    width: 10%;
-                }
-            }
-
-            TabWidget {
-                Tab {
-                    title: @tr("Description");
-                    Rectangle {
-                        background: #ffff;
-                        TextInput {
-                            // color: #0000;
-                            font-size: 14px;
-                            width: 100%;
-                            height: 100%;
-                            wrap: word-wrap;
+                    HorizontalBox {
+                        vertical-stretch: 0;
+                        padding-top: -25px;
+                        padding-left: 0px;
+                        Text {
+                            vertical-alignment: top;
+                            horizontal-alignment: left;
                             text: root.description;
-                            read-only: true;
-                            single-line: false;
                         }
                     }
                 }
 
-                Tab {
-                    title: @tr("Details");
-                    Rectangle {
-                        background: #ffff;
-                        TextInput {
-                            // color: #0000;
-                            font-size: 14px;
-                            width: 100%;
-                            height: 100%;
-                            wrap: word-wrap;
-                            text: root.metadata;
-                            read-only: true;
-                            single-line: false;
-                        }
+                VerticalBox {
+                    padding-top: -40px;
+                    padding-left: -50px;
+                    Image {
+                        source: @image-url("/usr/share/icons/breeze/mimetypes/64/application-vnd.debian.binary-package.svg");
+                        width: 128px;
+                        height: 128px;
                     }
                 }
             }
+        }
 
-            HorizontalBox {
-                Button {
-                    text: @tr("Install");
-                    clicked => {
-                        root.is-install = true;
-                        root.install();
-                    }
-                    enabled: root.can-install;
+        Rectangle {
+            height: 1px;
+            background: #cfcfcf;
+        }
+
+        HorizontalBox {
+            vertical-stretch: 1;
+            padding-left: 20px;
+            Text {
+                vertical-alignment: top;
+                horizontal-alignment: left;
+                text: @tr("This utility will help you install .deb packages. Please note that many 3rd-party software packages are not tested and verified by AOSC OS maintainers - it may not function as expected and may contain malicious content.\n\nTo install the package, press \"Install\" below and you will be prompted for administrative password; to cancel, press \"Cancel\"");
+                wrap: word-wrap;
+            }
+        }
+
+        HorizontalBox {
+            vertical-stretch: 0;
+            Button {
+                text: @tr("Install");
+                clicked => {
+                    root.is-install = true;
+                    root.install();
                 }
+                enabled: root.can-install;
+            }
 
-                Button {
-                    text: @tr("Cancel");
-                    clicked => {
-                        root.close();
-                    }
+            Button {
+                text: @tr("Cancel");
+                clicked => {
+                    root.close();
                 }
             }
         }
     }
 
-    if (root.is-install): GroupBox {
-        width: 100%;
-        height: 100%;
-
-        VerticalLayout {
-            HorizontalBox {
-                progress-indicator := ProgressIndicator {
-                    min-width: 160px;
-                    progress: root.progress;
-                }
-    
-                Text {
-                    vertical-alignment: center;
-                    horizontal-alignment: left;
-                    text: root.progress * 100 + "%";
-                }
+    if (root.is-install): VerticalLayout {
+        HorizontalBox {
+            progress-indicator := ProgressIndicator {
+                min-width: 160px;
+                progress: root.progress;
             }
 
-            Rectangle {
-                background: #000;
-                TextInput {
-                    font-family: "monospace";
-                    color: #ffff;
-                    width: 100%;
-                    height: 100%;
-                    text: root.message;
-                    read-only: true;
-                    single-line: false;
-                }
+            Text {
+                vertical-alignment: center;
+                horizontal-alignment: left;
+                text: root.progress * 100 + "%";
+            }
+        }
+
+        Rectangle {
+            background: #000;
+            TextInput {
+                font-family: "monospace";
+                color: #ffff;
+                width: 100%;
+                height: 100%;
+                text: root.message;
+                read-only: true;
+                single-line: false;
             }
         }
     }
