@@ -26,14 +26,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             let mo_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("mo")
                 .join(&filename_without_exit)
-                .join("LC_MESSAGE");
+                .join("LC_MESSAGES");
 
             create_dir_all(&mo_dir)?;
 
             Command::new("msgfmt")
                 .arg(p)
                 .arg("-o")
-                .arg(mo_dir.join(format!("{}.mo", filename_without_exit)))
+                .arg(mo_dir.join("deb-installer.mo"))
                 .output()?;
         }
     }
