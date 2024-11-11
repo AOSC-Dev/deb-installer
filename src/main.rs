@@ -57,6 +57,8 @@ enum Progress {
 }
 
 fn main() {
+    slint::init_translations!(concat!(env!("CARGO_MANIFEST_DIR"), "/mo/"));
+
     let Args {
         package,
         backend,

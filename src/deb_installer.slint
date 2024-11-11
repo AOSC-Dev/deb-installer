@@ -99,8 +99,8 @@ export component DebInstaller inherits Window {
                     enabled: root.can-install;
                 }
 
-                StandardButton {
-                    kind: cancel;
+                Button {
+                    text: @tr("Cancel");
                     clicked => {
                         root.close();
                     }
