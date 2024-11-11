@@ -1,5 +1,9 @@
 use std::{
-    env, error::Error, fs::{create_dir_all, read_dir}, path::Path, process::Command
+    env,
+    error::Error,
+    fs::{create_dir_all, read_dir},
+    path::Path,
+    process::Command,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
