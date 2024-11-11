@@ -1,11 +1,12 @@
 use std::{
-    error::Error,
-    fs::{create_dir_all, read_dir},
-    path::Path,
-    process::Command,
+    env, error::Error, fs::{create_dir_all, read_dir}, path::Path, process::Command
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
+    if env::var("GEN_GETTEXT").is_err() {
+        return Ok(());
+    }
+
     create_dir_all(concat!(env!("CARGO_MANIFEST_DIR"), "/mo/"))?;
 
     let po_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/po/");
