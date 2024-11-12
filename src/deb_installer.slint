@@ -1,9 +1,10 @@
-import { GroupBox, HorizontalBox, GridBox, TabWidget, VerticalBox, Button, TextEdit, StandardButton, ProgressIndicator, Spinner, CheckBox } from "std-widgets.slint";
+import { GroupBox, HorizontalBox, GridBox, TabWidget, VerticalBox, Button, TextEdit, StandardButton, ProgressIndicator, Spinner, CheckBox, Palette } from "std-widgets.slint";
 
 export component DebInstaller inherits Window {
     title: @tr("Package Installation Wizard");
     width: 500px;
-    height: 260px;
+    height: 320px;
+    icon: @image-url("/usr/share/icons/breeze/mimetypes/64/application-vnd.debian.binary-package.svg");
 
     in-out property <string> package;
     in-out property <string> status;
@@ -23,8 +24,8 @@ export component DebInstaller inherits Window {
         GridBox {
             Row {
                 VerticalBox {
-                    vertical-stretch: 0;
-                    padding-top: -10px;
+                    padding-bottom: 25px;
+                    padding-top: -5px;
                     padding-left: 15px;
 
                     HorizontalBox {
@@ -33,15 +34,17 @@ export component DebInstaller inherits Window {
                         Text {
                             vertical-alignment: top;
                             horizontal-alignment: left;
-                            font-size: 26px;
+                            font-size: 24px;
                             font-weight: 600;
                             text: root.package;
+                            width: 90%;
+                            overflow: elide;
                         }
                     }
                     
                     HorizontalBox {
                         vertical-stretch: 0;
-                        padding-top: -25px;
+                        padding-top: -15px;
                         padding-left: 0px;
                         Text {
                             vertical-alignment: top;
@@ -52,7 +55,7 @@ export component DebInstaller inherits Window {
 
                     HorizontalBox {
                         vertical-stretch: 0;
-                        padding-top: -25px;
+                        padding-top: -15px;
                         padding-left: 0px;
                         Text {
                             vertical-alignment: top;
@@ -79,15 +82,25 @@ export component DebInstaller inherits Window {
             background: #cfcfcf;
         }
 
-        HorizontalBox {
+        Rectangle {
+            background: Palette.control-background;
             vertical-stretch: 1;
-            padding-left: 20px;
-            Text {
-                vertical-alignment: top;
-                horizontal-alignment: left;
-                text: @tr("This utility will help you install .deb packages. Please note that many 3rd-party software packages are not tested and verified by AOSC OS maintainers - it may not function as expected and may contain malicious content.\n\nTo install the package, press \"Install\" below and you will be prompted for administrative password; to cancel, press \"Cancel\"");
-                wrap: word-wrap;
+            HorizontalBox {
+                padding-top: 15px;
+                padding-left: 20px;
+                padding-right: 30px;
+                Text {
+                    vertical-alignment: top;
+                    horizontal-alignment: left;
+                    text: @tr("Welcome to the software package installation wizard. Please note that many 3rd-party software packages are not tested nor verified by your distribution maintainers (they may not function as expected, or may contain malicious content).\n\nTo install the package, press \"Install\" below and you will be prompted for administrative password.");
+                    wrap: word-wrap;
+                }
             }
+        }
+
+        Rectangle {
+            height: 1px;
+            background: #cfcfcf;
         }
 
         HorizontalBox {
@@ -111,29 +124,29 @@ export component DebInstaller inherits Window {
     }
 
     if (root.is-install): VerticalLayout {
+        Rectangle {
+            background: Palette.foreground;
+            Rectangle {
+                background: Palette.foreground;
+                width: 96%;
+                height: 95%;
+                TextInput {
+                    font-family: "monospace";
+                    color: #ffffff;
+                    width: 100%;
+                    height: 100%;
+                    text: root.message;
+                    read-only: true;
+                    single-line: false;
+                    wrap: word-wrap;
+                }    
+            }
+        }
+
         HorizontalBox {
             progress-indicator := ProgressIndicator {
                 min-width: 160px;
                 progress: root.progress;
-            }
-
-            Text {
-                vertical-alignment: center;
-                horizontal-alignment: left;
-                text: root.progress * 100 + "%";
-            }
-        }
-
-        Rectangle {
-            background: #000;
-            TextInput {
-                font-family: "monospace";
-                color: #ffff;
-                width: 100%;
-                height: 100%;
-                text: root.message;
-                read-only: true;
-                single-line: false;
             }
         }
     }
