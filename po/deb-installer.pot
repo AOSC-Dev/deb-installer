@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2024-11-11 04:12+0000\n"
+"POT-Creation-Date: 2024-11-12 14:05+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -12,32 +12,29 @@ msgstr ""
 "Language: \n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: src/deb_installer.slint:28
+#: src/deb_installer.slint:4
 msgctxt "DebInstaller"
-msgid "Package:"
+msgid "Package Installation Wizard"
 msgstr ""
 
-#: src/deb_installer.slint:44
+#: src/deb_installer.slint:95
 msgctxt "DebInstaller"
-msgid "Status:"
+msgid ""
+"Welcome to the software package installation wizard. Please note that many "
+"3rd-party software packages are not tested nor verified by your distribution "
+"maintainers (they may not function as expected, or may contain malicious "
+"content).\n"
+"\n"
+"To install the package, press \"Install\" below and you will be prompted for "
+"administrative password."
 msgstr ""
 
-#: src/deb_installer.slint:58
-msgctxt "DebInstaller"
-msgid "Description"
-msgstr ""
-
-#: src/deb_installer.slint:75
-msgctxt "DebInstaller"
-msgid "Details"
-msgstr ""
-
-#: src/deb_installer.slint:94
+#: src/deb_installer.slint:109
 msgctxt "DebInstaller"
 msgid "Install"
 msgstr ""
 
-#: src/deb_installer.slint:103
+#: src/deb_installer.slint:118
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr ""
