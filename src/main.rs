@@ -114,7 +114,7 @@ fn main() {
 
         if package.extension().map(|x| x.to_string_lossy()) != Some("deb".into()) {
             eprintln!(
-                "Usage: {} /path/to/foo.deb",
+                "Usage: {} /path/to/package.deb",
                 current_exe().unwrap().display()
             );
             exit(1);
@@ -130,7 +130,7 @@ fn main() {
             .unwrap();
     } else {
         eprintln!(
-            "Usage: {} /path/to/foo.deb",
+            "Usage: {} /path/to/package.deb",
             current_exe().unwrap().display()
         );
         exit(1);
@@ -171,7 +171,7 @@ fn ui(pkg: PathBuf) {
                 Ok(_) => {
                     let _ = ui_weak_2.upgrade_in_event_loop(|ui| {
                         let old = ui.get_message();
-                        let new_msg = format!("{}Install is finished\n", old);
+                        let new_msg = format!("{}\n====\nInstallation complete, close the window to finish.\n====\n", old);
                         ui.set_message(new_msg.into());
                     });
                 }
@@ -226,7 +226,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
             let resolve_res = apt.resolve(true, false, false);
 
             let (mut status, info, mut can_install) = match info {
-                Ok(info) => ("is ok to install".to_string(), Some(info), true),
+                Ok(info) => ("OK to install".to_string(), Some(info), true),
                 Err(e) => (e.to_string(), None, false),
             };
 
