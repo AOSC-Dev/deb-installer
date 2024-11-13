@@ -169,24 +169,12 @@ fn ui(pkg: PathBuf) {
 
         thread::spawn(move || {
             let res = t.join().unwrap();
-            match res {
-                Ok(_) => {
-                    let _ = ui_weak_2.upgrade_in_event_loop(|ui| {
-                        let old = ui.get_message();
-                        let new_msg = format!(
-                            "{}\n====\nInstallation complete, close the window to finish.\n====\n",
-                            old
-                        );
-                        ui.set_message(new_msg.into());
-                    });
-                }
-                Err(e) => {
-                    let _ = ui_weak_2.upgrade_in_event_loop(move |ui| {
-                        let old = ui.get_message();
-                        let new_msg = format!("{}{}\n", old, e);
-                        ui.set_message(new_msg.into());
-                    });
-                }
+            if let Err(e) = res {
+                let _ = ui_weak_2.upgrade_in_event_loop(move |ui| {
+                    let old = ui.get_message();
+                    let new_msg = format!("{}{}\n", old, e);
+                    ui.set_message(new_msg.into());
+                });
             }
         });
     });
