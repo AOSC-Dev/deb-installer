@@ -1333,6 +1333,7 @@ dependencies = [
  "console",
  "flume",
  "human_bytes",
+ "num_enum",
  "oma-fetch",
  "oma-pm",
  "reqwest",

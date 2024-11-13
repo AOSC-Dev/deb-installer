@@ -15,6 +15,7 @@ use anyhow::Result;
 use backend::Backend;
 use clap::Parser;
 use human_bytes::human_bytes;
+use num_enum::IntoPrimitive;
 use oma_pm::{
     apt::{AptConfig, OmaApt, OmaAptArgs},
     pkginfo::PackageInfo,
@@ -214,6 +215,15 @@ fn ui(pkg: PathBuf) {
     installer.run().unwrap();
 }
 
+#[derive(IntoPrimitive)]
+#[repr(u8)]
+enum InstallAction {
+    Install = 0,
+    ReInstall = 1,
+    Upgrade = 2,
+    Downgrade = 3,
+}
+
 fn set_info(arg: &str, installer: &DebInstaller) {
     let apt = OmaApt::new(
         vec![arg.to_string()],
@@ -232,12 +242,9 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                 Err(e) => (e.to_string(), None, false),
             };
 
-            match resolve_res {
-                Ok(_) => {}
-                Err(e) => {
-                    status = e.to_string();
-                    can_install = false;
-                }
+            if let Err(e) = resolve_res {
+                status = e.to_string();
+                can_install = false;
             }
 
             installer.set_can_install(can_install);
@@ -249,6 +256,24 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                 installer.set_description(info.description.into());
                 installer.set_version(info.version.to_string().into());
                 installer.set_installed_size(human_bytes(info.install_size as f64).into());
+
+                let mut action = InstallAction::Install;
+
+                if let Some(pkg) = apt.cache.get(&info.package) {
+                    if let Some(installed) = pkg.installed() {
+                        let version = pkg.get_version(&info.version);
+                        if version.as_ref().is_some_and(|x| x > &installed) {
+                            action = InstallAction::Upgrade
+                        } else if version.as_ref().is_some_and(|x| x < &installed) {
+                            action = InstallAction::Downgrade
+                        } else {
+                            action = InstallAction::ReInstall
+                        }
+                    }
+                }
+
+                let action: u8 = action.into();
+                installer.set_action(action.into());
             }
         }
         Err(e) => {
