@@ -332,13 +332,17 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
 
     let weak = installer.as_weak();
 
+    let has_debconf_child = debconf_child.is_some();
+
     // 关闭按钮
     installer.on_close(move || {
-        // 杀掉 debconf helper 进程
-        kill_debconf.store(true, Ordering::SeqCst);
-        // 等待是否可以退出
-        while !cec.load(Ordering::SeqCst) {}
-        process::exit(0)
+        if has_debconf_child {
+            // 杀掉 debconf helper 进程
+            kill_debconf.store(true, Ordering::SeqCst);
+            // 等待是否可以退出
+            while !cec.load(Ordering::SeqCst) {}
+        }
+        process::exit(0);
     });
 
     // 窗口关闭按钮
@@ -348,8 +352,11 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
             return slint::CloseRequestResponse::KeepWindowShown;
         }
 
-        kc2.store(true, Ordering::SeqCst);
-        while !cec2.load(Ordering::SeqCst) {}
+        if has_debconf_child {
+            kc2.store(true, Ordering::SeqCst);
+            while !cec2.load(Ordering::SeqCst) {}
+        }
+
         slint::CloseRequestResponse::HideWindow
     });
 
