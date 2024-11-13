@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2024-11-13 07:21+0000\n"
+"POT-Creation-Date: 2024-11-13 08:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,7 +47,7 @@ msgctxt "DebInstaller"
 msgid "Downgrade"
 msgstr ""
 
-#: src/deb_installer.slint:101
+#: src/deb_installer.slint:105
 msgctxt "DebInstaller"
 msgid ""
 "Welcome to the software package installation wizard. Please note that many "
@@ -59,13 +59,18 @@ msgid ""
 "administrative password."
 msgstr ""
 
-#: src/deb_installer.slint:124
+#: src/deb_installer.slint:128
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr ""
 
-#: src/deb_installer.slint:161
+#: src/deb_installer.slint:145
 msgctxt "DebInstaller"
-msgid "Done"
+msgid "Preparing for installation, please wait ..."
+msgstr ""
+
+#: src/deb_installer.slint:169
+msgctxt "DebInstaller"
+msgid "Finish"
 msgstr ""
 

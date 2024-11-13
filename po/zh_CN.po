@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2024-11-13 07:21+0000\n"
-"PO-Revision-Date: 2024-11-13 15:21+0800\n"
+"POT-Creation-Date: 2024-11-13 08:36+0000\n"
+"PO-Revision-Date: 2024-11-13 16:36+0800\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: zh_CN\n"
@@ -25,7 +25,7 @@ msgstr "可安装"
 #: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Dependencies unmet"
-msgstr "依赖不满足"
+msgstr "依赖未满足"
 
 #: src/deb_installer.slint:23
 msgctxt "DebInstaller"
@@ -47,7 +47,7 @@ msgctxt "DebInstaller"
 msgid "Downgrade"
 msgstr "降级"
 
-#: src/deb_installer.slint:101
+#: src/deb_installer.slint:105
 msgctxt "DebInstaller"
 msgid ""
 "Welcome to the software package installation wizard. Please note that many "
@@ -65,15 +65,24 @@ msgstr ""
 "\n"
 "要继续安装，请点击下方“{}”按钮（本向导将提示您输入管理员密码）。"
 
-#: src/deb_installer.slint:124
+#: src/deb_installer.slint:128
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr "取消"
 
-#: src/deb_installer.slint:161
+#: src/deb_installer.slint:145
 msgctxt "DebInstaller"
-msgid "Done"
+msgid "Preparing for installation, please wait ..."
+msgstr "正在准备安装，请稍候 ..."
+
+#: src/deb_installer.slint:169
+msgctxt "DebInstaller"
+msgid "Finish"
 msgstr "完成"
+
+#~ msgctxt "DebInstaller"
+#~ msgid "Done"
+#~ msgstr "完成"
 
 #~ msgctxt "DebInstaller"
 #~ msgid "Package:"
