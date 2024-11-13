@@ -147,8 +147,14 @@ export component DebInstaller inherits Window {
             }
         }
 
+        Rectangle {
+            height: 1px;
+            background: #cfcfcf;
+        }
+
         if (!root.finished): HorizontalBox {
             progress-indicator := ProgressIndicator {
+                height: 34px;
                 min-width: 160px;
                 progress: root.progress;
             }
@@ -156,6 +162,7 @@ export component DebInstaller inherits Window {
 
         if (root.finished): HorizontalBox {
             Button {
+                height: 34px;
                 text: @tr("Done");
                 clicked => {
                     root.close();
