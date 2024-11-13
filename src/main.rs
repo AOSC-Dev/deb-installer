@@ -293,7 +293,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
             if let Some(info) = info {
                 installer.set_package(info.package.to_string().into());
                 installer.set_metadata(info.to_string().into());
-                installer.set_description(info.description.into());
+                installer.set_description(info.short_description.into());
                 installer.set_version(info.version.to_string().into());
                 installer.set_installed_size(human_bytes(info.install_size as f64).into());
 
