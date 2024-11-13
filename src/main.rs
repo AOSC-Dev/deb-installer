@@ -54,6 +54,7 @@ trait OmaClient {
 enum Progress {
     Percent(u32),
     Message(String),
+    Done,
 }
 
 fn main() {
@@ -171,7 +172,10 @@ fn ui(pkg: PathBuf) {
                 Ok(_) => {
                     let _ = ui_weak_2.upgrade_in_event_loop(|ui| {
                         let old = ui.get_message();
-                        let new_msg = format!("{}\n====\nInstallation complete, close the window to finish.\n====\n", old);
+                        let new_msg = format!(
+                            "{}\n====\nInstallation complete, close the window to finish.\n====\n",
+                            old
+                        );
                         ui.set_message(new_msg.into());
                     });
                 }
@@ -204,6 +208,11 @@ fn ui(pkg: PathBuf) {
                     let old = ui.get_message();
                     let new_msg = format!("{}{}\n", old, msg);
                     ui.set_message(new_msg.into());
+                });
+            }
+            Progress::Done => {
+                let _ = ui_weak.upgrade_in_event_loop(move |ui| {
+                    ui.set_finished(true);
                 });
             }
         }
@@ -374,6 +383,7 @@ async fn on_install_inner(argc: String, tx: flume::Sender<Progress>) -> Result<(
         tx.send_async(Progress::Percent(progress)).await?;
 
         if progress == 100 || is_finished {
+            tx.send_async(Progress::Done).await?;
             client.exit().await?;
             return Ok(());
         }

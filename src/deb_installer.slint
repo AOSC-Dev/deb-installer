@@ -16,6 +16,7 @@ export component DebInstaller inherits Window {
     in-out property <string> message;
     in-out property <bool> can-install;
     private property <bool> is-install;
+    in-out property <bool> finished;
 
     callback install();
     callback close();
@@ -41,7 +42,7 @@ export component DebInstaller inherits Window {
                             overflow: elide;
                         }
                     }
-                    
+
                     HorizontalBox {
                         vertical-stretch: 0;
                         padding-top: -15px;
@@ -139,14 +140,23 @@ export component DebInstaller inherits Window {
                     read-only: true;
                     single-line: false;
                     wrap: word-wrap;
-                }    
+                }
             }
         }
 
-        HorizontalBox {
+        if (!root.finished): HorizontalBox {
             progress-indicator := ProgressIndicator {
                 min-width: 160px;
                 progress: root.progress;
+            }
+        }
+
+        if (root.finished): HorizontalBox {
+            Button {
+                text: @tr("Done");
+                clicked => {
+                    root.close();
+                }
             }
         }
     }
