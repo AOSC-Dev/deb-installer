@@ -79,7 +79,9 @@ export component DebInstaller inherits Window {
                     padding-top: -40px;
                     padding-left: -50px;
                     Image {
-                        source: @image-url("/usr/share/icons/breeze/mimetypes/64/application-vnd.debian.binary-package.svg");
+                        // FIXME: Slint does not yet render SVG in scaled interfaces properly.
+                        // Use a high-definition PNG for now.
+                        source: @image-url("/usr/share/pixmaps/io.aosc.deb_installer.png");
                         width: 128px;
                         height: 128px;
                     }
