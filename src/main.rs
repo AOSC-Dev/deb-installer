@@ -215,8 +215,6 @@ fn ui(pkg: PathBuf) {
         });
     });
 
-    handle_exit(&installer, debconf_child);
-
     thread::spawn(move || loop {
         let Ok(progress) = progress_rx.recv() else {
             break;
@@ -242,6 +240,8 @@ fn ui(pkg: PathBuf) {
             }
         }
     });
+
+    handle_exit(&installer, debconf_child);
 
     installer.run().unwrap();
 }
@@ -330,6 +330,8 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
     let kc = kill_debconf.clone();
     let kc2 = kill_debconf.clone();
 
+    let weak = installer.as_weak();
+
     // 关闭按钮
     installer.on_close(move || {
         // 杀掉 debconf helper 进程
@@ -341,6 +343,10 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
 
     // 窗口关闭按钮
     installer.window().on_close_requested(move || {
+        if !weak.unwrap().get_finished() {
+            return slint::CloseRequestResponse::KeepWindowShown;
+        }
+
         kc2.store(true, Ordering::SeqCst);
         while !cec2.load(Ordering::SeqCst) {}
         slint::CloseRequestResponse::HideWindow
