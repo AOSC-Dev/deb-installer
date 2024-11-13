@@ -14,6 +14,7 @@ use std::{
 use anyhow::Result;
 use backend::Backend;
 use clap::Parser;
+use human_bytes::human_bytes;
 use oma_pm::{
     apt::{AptConfig, OmaApt, OmaAptArgs},
     pkginfo::PackageInfo,
@@ -255,7 +256,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                 installer.set_metadata(info.to_string().into());
                 installer.set_description(info.description.into());
                 installer.set_version(info.version.to_string().into());
-                installer.set_installed_size(info.install_size.to_string().into());
+                installer.set_installed_size(human_bytes(info.install_size as f64).into());
             }
         }
         Err(e) => {
