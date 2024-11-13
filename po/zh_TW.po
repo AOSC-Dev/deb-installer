@@ -2,50 +2,51 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-11-13 08:36+0000\n"
-"PO-Revision-Date: 2024-11-13 17:13+0800\n"
-"Last-Translator: \n"
-"Language-Team: \n"
+"PO-Revision-Date: 2024-11-13 09:36+0000\n"
+"Last-Translator: Kaiyang Wu <origincode@aosc.io>\n"
+"Language-Team: Chinese (Traditional Han script) <https://weblate.aosc.io/"
+"projects/deb-installer/deb-installer/zh_Hant/>\n"
 "Language: zh_TW\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 3.4.1\n"
+"X-Generator: Weblate 5.8.1\n"
 
 #: src/deb_installer.slint:4
 msgctxt "DebInstaller"
 msgid "Package Installation Wizard"
-msgstr ""
+msgstr "軟體套件安裝精靈"
 
 #: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "OK to install"
-msgstr ""
+msgstr "可安裝"
 
 #: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Dependencies unmet"
-msgstr ""
+msgstr "依賴未滿足"
 
 #: src/deb_installer.slint:23
 msgctxt "DebInstaller"
 msgid "Install"
-msgstr ""
+msgstr "安裝"
 
 #: src/deb_installer.slint:23
 msgctxt "DebInstaller"
 msgid "Reinstall"
-msgstr ""
+msgstr "重新安裝"
 
 #: src/deb_installer.slint:23
 msgctxt "DebInstaller"
 msgid "Upgrade"
-msgstr ""
+msgstr "更新"
 
 #: src/deb_installer.slint:23
 msgctxt "DebInstaller"
 msgid "Downgrade"
-msgstr ""
+msgstr "降級"
 
 #: src/deb_installer.slint:105
 msgctxt "DebInstaller"
@@ -58,18 +59,24 @@ msgid ""
 "To install the package, press \"{}\" below and you will be prompted for "
 "administrative password."
 msgstr ""
+"歡迎使用軟體套件安裝精靈。\n"
+"\n"
+"請注意：許多第三方軟體套件尚未經過發行版維護者測試或驗證，部分軟體可能不會正"
+"常工作，甚至包含惡意內容。\n"
+"\n"
+"要繼續安裝，請按下方「{}」按鈕（本精靈將提示您輸入管理者密碼）。"
 
 #: src/deb_installer.slint:128
 msgctxt "DebInstaller"
 msgid "Cancel"
-msgstr ""
+msgstr "取消"
 
 #: src/deb_installer.slint:145
 msgctxt "DebInstaller"
 msgid "Preparing for installation, please wait ..."
-msgstr ""
+msgstr "正在準備安裝，請稍候……"
 
 #: src/deb_installer.slint:169
 msgctxt "DebInstaller"
 msgid "Finish"
-msgstr ""
+msgstr "完成"
