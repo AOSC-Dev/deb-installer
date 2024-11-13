@@ -3,6 +3,8 @@ deb-installer
 
 A `.deb` package installation wizard.
 
+![Main interface](/data/screenshot.png)
+
 Dependencies
 ---
 
