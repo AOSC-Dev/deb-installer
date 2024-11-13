@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Package Installation Wizard
+Name[zh_CN]=软件包安装向导
+Name[zh_TW]=軟體套件安裝精靈
+Icon=io.aosc.deb_installer
+TryExec=deb-installer
+Exec=deb-installer %U
+Categories=System;
+MimeType=application/vnd.debian.binary-package;
+StartupWMClass=deb-installer
+Keywords=deb;dpkg;oma;apt;installer;
+Terminal=false
+NoDisplay=true
