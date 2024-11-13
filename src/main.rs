@@ -59,7 +59,11 @@ enum Progress {
 }
 
 fn main() {
+    #[cfg(feature = "debug")]
     slint::init_translations!(concat!(env!("CARGO_MANIFEST_DIR"), "/mo/"));
+
+    #[cfg(not(feature = "debug"))]
+    slint::init_translations!("/usr/share/locale");
 
     let Args {
         package,
