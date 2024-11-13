@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2024-11-13 04:46+0000\n"
+"POT-Creation-Date: 2024-11-13 05:19+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,32 @@ msgctxt "DebInstaller"
 msgid "Package Installation Wizard"
 msgstr ""
 
-#: src/deb_installer.slint:55
+#: src/deb_installer.slint:21 src/deb_installer.slint:21
+msgctxt "DebInstaller"
+msgid "Install"
+msgstr ""
+
+#: src/deb_installer.slint:21
+msgctxt "DebInstaller"
+msgid "Reinstall"
+msgstr ""
+
+#: src/deb_installer.slint:21
+msgctxt "DebInstaller"
+msgid "Upgrade"
+msgstr ""
+
+#: src/deb_installer.slint:21
+msgctxt "DebInstaller"
+msgid "Downgrade"
+msgstr ""
+
+#: src/deb_installer.slint:56
 msgctxt "DebInstaller"
 msgid "OK to install"
 msgstr ""
 
-#: src/deb_installer.slint:98
+#: src/deb_installer.slint:99
 msgctxt "DebInstaller"
 msgid ""
 "Welcome to the software package installation wizard. Please note that many "
@@ -30,36 +50,16 @@ msgid ""
 "maintainers (they may not function as expected, or may contain malicious "
 "content).\n"
 "\n"
-"To install the package, press \"Install\" below and you will be prompted for "
+"To install the package, press \"{}\" below and you will be prompted for "
 "administrative password."
 msgstr ""
 
-#: src/deb_installer.slint:112 src/deb_installer.slint:112
-msgctxt "DebInstaller"
-msgid "Install"
-msgstr ""
-
-#: src/deb_installer.slint:112
-msgctxt "DebInstaller"
-msgid "Reinstall"
-msgstr ""
-
-#: src/deb_installer.slint:112
-msgctxt "DebInstaller"
-msgid "Upgrade"
-msgstr ""
-
-#: src/deb_installer.slint:112
-msgctxt "DebInstaller"
-msgid "Downgrade"
-msgstr ""
-
-#: src/deb_installer.slint:121
+#: src/deb_installer.slint:122
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr ""
 
-#: src/deb_installer.slint:158
+#: src/deb_installer.slint:159
 msgctxt "DebInstaller"
 msgid "Done"
 msgstr ""

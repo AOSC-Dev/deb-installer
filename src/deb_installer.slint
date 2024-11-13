@@ -18,6 +18,7 @@ export component DebInstaller inherits Window {
     private property <bool> is-install;
     in-out property <bool> finished;
     in-out property <int> action;
+    private property <string> install-button-name: root.action == 0 ? @tr("Install") : root.action == 1 ? @tr("Reinstall") : root.action == 2 ? @tr("Upgrade") : root.action == 3 ? @tr("Downgrade") : @tr("Install");
 
     callback install();
     callback close();
@@ -95,7 +96,7 @@ export component DebInstaller inherits Window {
                 Text {
                     vertical-alignment: top;
                     horizontal-alignment: left;
-                    text: @tr("Welcome to the software package installation wizard. Please note that many 3rd-party software packages are not tested nor verified by your distribution maintainers (they may not function as expected, or may contain malicious content).\n\nTo install the package, press \"Install\" below and you will be prompted for administrative password.");
+                    text: @tr("Welcome to the software package installation wizard. Please note that many 3rd-party software packages are not tested nor verified by your distribution maintainers (they may not function as expected, or may contain malicious content).\n\nTo install the package, press \"{}\" below and you will be prompted for administrative password.", root.install-button-name);
                     wrap: word-wrap;
                 }
             }
@@ -109,7 +110,7 @@ export component DebInstaller inherits Window {
         HorizontalBox {
             vertical-stretch: 0;
             Button {
-                text: root.action == 0 ? @tr("Install") : root.action == 1 ? @tr("Reinstall") : root.action == 2 ? @tr("Upgrade") : root.action == 3 ? @tr("Downgrade") : @tr("Install");
+                text: root.install-button-name;
                 clicked => {
                     root.is-install = true;
                     root.install();
