@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { version = "1", features = ["backtrace"] }
-slint = { version = "1.8.0", features = ["gettext"] }
+slint = { git = "https://github.com/slint-ui/slint", rev = "892471205e1bb62b4cdafb64031bb837b428cb7f", features = ["gettext"] }
 oma-pm = { git = "https://github.com/AOSC-Dev/oma/", package = "oma-pm", rev = "68f8389d39957106bb157d0dc60e7f58998e3ada"}
 reqwest = "0.12"
 apt-auth-config =  { git = "https://github.com/AOSC-Dev/oma/", package = "apt-auth-config", rev = "68f8389d39957106bb157d0dc60e7f58998e3ada" }
