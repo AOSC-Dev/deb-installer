@@ -236,7 +236,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
             let resolve_res = apt.resolve(true, false, false);
 
             let (mut status, info, mut can_install) = match info {
-                Ok(info) => ("OK to install".to_string(), Some(info), true),
+                Ok(info) => ("".to_string(), Some(info), true),
                 Err(e) => (e.to_string(), None, false),
             };
 

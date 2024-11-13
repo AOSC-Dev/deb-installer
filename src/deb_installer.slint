@@ -50,7 +50,7 @@ export component DebInstaller inherits Window {
                         Text {
                             vertical-alignment: top;
                             horizontal-alignment: left;
-                            text: root.version + "·" + root.installed-size + "·" + root.status;
+                            text: root.status == "" ? root.version + "·" + root.installed-size + "·" + @tr("OK to install") : root.version + "·" + root.installed-size + "·" + root.status;
                         }
                     }
 
