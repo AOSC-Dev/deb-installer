@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2024-11-13 02:45+0000\n"
-"PO-Revision-Date: 2024-11-13 10:45+0800\n"
+"POT-Creation-Date: 2024-11-13 04:46+0000\n"
+"PO-Revision-Date: 2024-11-13 12:47+0800\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: zh_CN\n"
@@ -17,12 +17,12 @@ msgctxt "DebInstaller"
 msgid "Package Installation Wizard"
 msgstr "软件包安装向导"
 
-#: src/deb_installer.slint:53
+#: src/deb_installer.slint:55
 msgctxt "DebInstaller"
 msgid "OK to install"
 msgstr "可安装"
 
-#: src/deb_installer.slint:96
+#: src/deb_installer.slint:98
 msgctxt "DebInstaller"
 msgid ""
 "Welcome to the software package installation wizard. Please note that many "
@@ -40,17 +40,32 @@ msgstr ""
 "\n"
 "要继续安装，请点击下方“安装”按钮（本向导将提示您输入管理员密码）。"
 
-#: src/deb_installer.slint:110
+#: src/deb_installer.slint:112
 msgctxt "DebInstaller"
 msgid "Install"
 msgstr "安装"
 
-#: src/deb_installer.slint:119
+#: src/deb_installer.slint:112
+msgctxt "DebInstaller"
+msgid "Reinstall"
+msgstr "重装"
+
+#: src/deb_installer.slint:112
+msgctxt "DebInstaller"
+msgid "Upgrade"
+msgstr "升级"
+
+#: src/deb_installer.slint:112
+msgctxt "DebInstaller"
+msgid "Downgrade"
+msgstr "降级"
+
+#: src/deb_installer.slint:121
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr "取消"
 
-#: src/deb_installer.slint:156
+#: src/deb_installer.slint:158
 msgctxt "DebInstaller"
 msgid "Done"
 msgstr "完成"
