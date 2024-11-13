@@ -1,4 +1,4 @@
-import { GroupBox, HorizontalBox, GridBox, TabWidget, VerticalBox, Button, TextEdit, StandardButton, ProgressIndicator, Spinner, CheckBox, Palette } from "std-widgets.slint";
+import { GroupBox, HorizontalBox, GridBox, TabWidget, VerticalBox, Button, TextEdit, StandardButton, ProgressIndicator, Spinner, CheckBox, Palette, ScrollView } from "std-widgets.slint";
 
 export component DebInstaller inherits Window {
     title: @tr("Package Installation Wizard");
@@ -135,19 +135,16 @@ export component DebInstaller inherits Window {
 
     if (root.is-install): VerticalLayout {
         Rectangle {
-            background: Palette.foreground;
             Rectangle {
-                background: Palette.foreground;
                 width: 96%;
-                height: 95%;
-                TextInput {
-                    font-family: "monospace";
-                    color: #ffffff;
+                height: 93%;
+                TextEdit {
                     width: 100%;
                     height: 100%;
+                    has-focus: false;
+                    placeholder-text: @tr("Preparing for installation, please wait ...");
                     text: root.message;
                     read-only: true;
-                    single-line: false;
                     wrap: word-wrap;
                 }
             }
@@ -169,7 +166,7 @@ export component DebInstaller inherits Window {
         if (root.finished): HorizontalBox {
             Button {
                 height: 34px;
-                text: @tr("Done");
+                text: @tr("Finish");
                 clicked => {
                     root.close();
                 }
