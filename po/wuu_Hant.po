@@ -2,51 +2,54 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "POT-Creation-Date: 2024-11-13 08:36+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2024-11-13 10:08+0000\n"
+"Last-Translator: Kaiyang Wu <origincode@aosc.io>\n"
+"Language-Team: Wu (Traditional Han script) <https://weblate.aosc.io/projects/"
+"deb-installer/deb-installer/wuu_Hant/>\n"
 "Language: wuu_Hant\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.8.1\n"
 
 #: src/deb_installer.slint:4
 msgctxt "DebInstaller"
 msgid "Package Installation Wizard"
-msgstr ""
+msgstr "軟件包安裝嚮導"
 
 #: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "OK to install"
-msgstr ""
+msgstr "可以安裝"
 
 #: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Dependencies unmet"
-msgstr ""
+msgstr "依賴弗滿足"
 
 #: src/deb_installer.slint:23 src/deb_installer.slint:23
 msgctxt "DebInstaller"
 msgid "Install"
-msgstr ""
+msgstr "安裝"
 
 #: src/deb_installer.slint:23
 msgctxt "DebInstaller"
 msgid "Reinstall"
-msgstr ""
+msgstr "重新安裝"
 
 #: src/deb_installer.slint:23
 msgctxt "DebInstaller"
 msgid "Upgrade"
-msgstr ""
+msgstr "更新"
 
 #: src/deb_installer.slint:23
 msgctxt "DebInstaller"
 msgid "Downgrade"
-msgstr ""
+msgstr "降級"
 
 #: src/deb_installer.slint:105
+#, fuzzy
 msgctxt "DebInstaller"
 msgid ""
 "Welcome to the software package installation wizard. Please note that many "
@@ -57,18 +60,24 @@ msgid ""
 "To install the package, press \"{}\" below and you will be prompted for "
 "administrative password."
 msgstr ""
+"歡迎使用軟件包安裝嚮導。\n"
+"\n"
+"請注意：交關第三方軟件包㬟經過發行版維護人員測試或者驗證，伊拉個功能可能弗大"
+"來三，甚至還有惡意內容。\n"
+"\n"
+"要繼續安裝，請撳下底隻“{}”按鈕（搿隻嚮導將會問儂要管理員密碼）。"
 
 #: src/deb_installer.slint:128
 msgctxt "DebInstaller"
 msgid "Cancel"
-msgstr ""
+msgstr "取消"
 
 #: src/deb_installer.slint:145
 msgctxt "DebInstaller"
 msgid "Preparing for installation, please wait ..."
-msgstr ""
+msgstr "正當在許準備安裝，請些稍等歇……"
 
 #: src/deb_installer.slint:169
 msgctxt "DebInstaller"
 msgid "Finish"
-msgstr ""
+msgstr "完成"
