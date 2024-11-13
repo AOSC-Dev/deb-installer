@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2024-11-13 08:36+0000\n"
-"PO-Revision-Date: 2024-11-13 09:36+0000\n"
+"POT-Creation-Date: 2024-11-13 09:52+0000\n"
+"PO-Revision-Date: 2024-11-13 17:52+0800\n"
 "Last-Translator: Kaiyang Wu <origincode@aosc.io>\n"
 "Language-Team: Chinese (Traditional Han script) <https://weblate.aosc.io/"
 "projects/deb-installer/deb-installer/zh_Hant/>\n"
@@ -11,7 +11,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.8.1\n"
+"X-Generator: Poedit 3.4.1\n"
 
 #: src/deb_installer.slint:4
 msgctxt "DebInstaller"
@@ -48,35 +48,36 @@ msgctxt "DebInstaller"
 msgid "Downgrade"
 msgstr "降級"
 
-#: src/deb_installer.slint:105
+#: src/deb_installer.slint:107
 msgctxt "DebInstaller"
 msgid ""
-"Welcome to the software package installation wizard. Please note that many "
-"3rd-party software packages are not tested nor verified by your distribution "
-"maintainers (they may not function as expected, or may contain malicious "
-"content).\n"
+"Welcome to the software package installation wizard.\n"
+"\n"
+"Please note that many 3rd-party software packages are not tested nor "
+"verified by your distribution maintainers (they may not function as "
+"expected, or may contain malicious content).\n"
 "\n"
 "To install the package, press \"{}\" below and you will be prompted for "
 "administrative password."
 msgstr ""
 "歡迎使用軟體套件安裝精靈。\n"
 "\n"
-"請注意：許多第三方軟體套件尚未經過發行版維護者測試或驗證，部分軟體可能不會正"
-"常工作，甚至包含惡意內容。\n"
+"請注意：許多第三方軟體套件尚未經過發行版維護者測試或驗證，部分軟體可能不會"
+"正常工作，甚至包含惡意內容。\n"
 "\n"
 "要繼續安裝，請按下方「{}」按鈕（本精靈將提示您輸入管理者密碼）。"
 
-#: src/deb_installer.slint:128
+#: src/deb_installer.slint:130
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr "取消"
 
-#: src/deb_installer.slint:145
+#: src/deb_installer.slint:148
 msgctxt "DebInstaller"
 msgid "Preparing for installation, please wait ..."
 msgstr "正在準備安裝，請稍候……"
 
-#: src/deb_installer.slint:169
+#: src/deb_installer.slint:172
 msgctxt "DebInstaller"
 msgid "Finish"
 msgstr "完成"

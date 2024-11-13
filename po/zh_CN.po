@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2024-11-13 08:36+0000\n"
-"PO-Revision-Date: 2024-11-13 16:36+0800\n"
+"POT-Creation-Date: 2024-11-13 09:52+0000\n"
+"PO-Revision-Date: 2024-11-13 17:52+0800\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: zh_CN\n"
@@ -47,35 +47,36 @@ msgctxt "DebInstaller"
 msgid "Downgrade"
 msgstr "降级"
 
-#: src/deb_installer.slint:105
+#: src/deb_installer.slint:107
 msgctxt "DebInstaller"
 msgid ""
-"Welcome to the software package installation wizard. Please note that many "
-"3rd-party software packages are not tested nor verified by your distribution "
-"maintainers (they may not function as expected, or may contain malicious "
-"content).\n"
+"Welcome to the software package installation wizard.\n"
+"\n"
+"Please note that many 3rd-party software packages are not tested nor "
+"verified by your distribution maintainers (they may not function as "
+"expected, or may contain malicious content).\n"
 "\n"
 "To install the package, press \"{}\" below and you will be prompted for "
 "administrative password."
 msgstr ""
 "欢迎使用软件包安装向导。\n"
 "\n"
-"请注意：许多第三方软件包尚未经过维护者测试或验证，其功能可能不完美，甚至包含"
-"恶意内容。\n"
+"请注意：许多第三方软件包尚未经过维护者测试或验证，其功能可能不完美，甚至包"
+"含恶意内容。\n"
 "\n"
 "要继续安装，请点击下方“{}”按钮（本向导将提示您输入管理员密码）。"
 
-#: src/deb_installer.slint:128
+#: src/deb_installer.slint:130
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr "取消"
 
-#: src/deb_installer.slint:145
+#: src/deb_installer.slint:148
 msgctxt "DebInstaller"
 msgid "Preparing for installation, please wait ..."
 msgstr "正在准备安装，请稍候 ..."
 
-#: src/deb_installer.slint:169
+#: src/deb_installer.slint:172
 msgctxt "DebInstaller"
 msgid "Finish"
 msgstr "完成"
