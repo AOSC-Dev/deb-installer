@@ -49,7 +49,6 @@ msgid "Downgrade"
 msgstr "降級"
 
 #: src/deb_installer.slint:105
-#, fuzzy
 msgctxt "DebInstaller"
 msgid ""
 "Welcome to the software package installation wizard. Please note that many "
