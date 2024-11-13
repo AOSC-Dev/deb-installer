@@ -343,7 +343,8 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
 
     // 窗口关闭按钮
     installer.window().on_close_requested(move || {
-        if !weak.unwrap().get_finished() {
+        let ui = weak.unwrap();
+        if !ui.get_finished() && ui.get_is_install() {
             return slint::CloseRequestResponse::KeepWindowShown;
         }
 
