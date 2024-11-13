@@ -1,0 +1,49 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2024-11-13 02:45+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_Hant\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/deb_installer.slint:4
+msgctxt "DebInstaller"
+msgid "Package Installation Wizard"
+msgstr ""
+
+#: src/deb_installer.slint:53
+msgctxt "DebInstaller"
+msgid "OK to install"
+msgstr ""
+
+#: src/deb_installer.slint:96
+msgctxt "DebInstaller"
+msgid ""
+"Welcome to the software package installation wizard. Please note that many "
+"3rd-party software packages are not tested nor verified by your distribution "
+"maintainers (they may not function as expected, or may contain malicious "
+"content).\n"
+"\n"
+"To install the package, press \"Install\" below and you will be prompted for "
+"administrative password."
+msgstr ""
+
+#: src/deb_installer.slint:110
+msgctxt "DebInstaller"
+msgid "Install"
+msgstr ""
+
+#: src/deb_installer.slint:119
+msgctxt "DebInstaller"
+msgid "Cancel"
+msgstr ""
+
+#: src/deb_installer.slint:156
+msgctxt "DebInstaller"
+msgid "Done"
+msgstr ""
