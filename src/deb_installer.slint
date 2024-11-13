@@ -42,8 +42,8 @@ export component DebInstaller inherits Window {
                             font-size: 24px;
                             font-weight: 600;
                             text: root.package;
-                            width: 90%;
                             overflow: elide;
+                            width: 90%;
                         }
                     }
 
@@ -56,6 +56,8 @@ export component DebInstaller inherits Window {
                             horizontal-alignment: left;
                             color: root.err-num == 0 ? Palette.control-foreground : #aa0000;
                             text:  root.version + " · " + root.installed-size + " · " + root.status;
+                            overflow: elide;
+                            width: 90%;
                         }
                     }
 
@@ -67,6 +69,8 @@ export component DebInstaller inherits Window {
                             vertical-alignment: top;
                             horizontal-alignment: left;
                             text: root.description;
+                            overflow: elide;
+                            width: 90%;
                         }
                     }
                 }
