@@ -7,7 +7,6 @@ export component DebInstaller inherits Window {
     icon: @image-url("/usr/share/icons/breeze/mimetypes/64/application-vnd.debian.binary-package.svg");
 
     in-out property <string> package;
-    in-out property <string> status;
     in-out property <string> description;
     in-out property <string> version;
     in-out property <string> installed-size;
@@ -18,6 +17,9 @@ export component DebInstaller inherits Window {
     private property <bool> is-install;
     in-out property <bool> finished;
     in-out property <int> action;
+    in-out property <int> err-num;
+    in-out property <string> err;
+    in-out property <string> status: err-num == 0 ? @tr("OK to install") : err-num == 6 ? @tr("Dependencies unmet") : err;
     private property <string> install-button-name: root.action == 0 ? @tr("Install") : root.action == 1 ? @tr("Reinstall") : root.action == 2 ? @tr("Upgrade") : root.action == 3 ? @tr("Downgrade") : @tr("Install");
 
     callback install();
@@ -52,8 +54,8 @@ export component DebInstaller inherits Window {
                         Text {
                             vertical-alignment: top;
                             horizontal-alignment: left;
-                            color: root.status == "" ? Palette.control-foreground : #aa0000;
-                            text: root.status == "" ? root.version + " · " + root.installed-size + " · " + @tr("OK to install") : root.version + "·" + root.installed-size + "·" + root.status;
+                            color: root.err-num == 0 ? Palette.control-foreground : #aa0000;
+                            text:  root.version + " · " + root.installed-size + " · " + root.status;
                         }
                     }
 

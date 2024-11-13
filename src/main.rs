@@ -17,7 +17,7 @@ use clap::Parser;
 use human_bytes::human_bytes;
 use num_enum::IntoPrimitive;
 use oma_pm::{
-    apt::{AptConfig, OmaApt, OmaAptArgs},
+    apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError},
     pkginfo::PackageInfo,
 };
 use slint::ComponentHandle;
@@ -57,6 +57,37 @@ enum Progress {
     Percent(u32),
     Message(String),
     Done,
+}
+
+fn u8_oma_pm_errors(error: &OmaAptError) -> u8 {
+    match error {
+        OmaAptError::AptErrors(_) => 1,
+        OmaAptError::AptError(_) => 2,
+        OmaAptError::AptCxxException(_) => 3,
+        OmaAptError::OmaDatabaseError(_) => 4,
+        OmaAptError::MarkReinstallError(_, _) => 5,
+        OmaAptError::DependencyIssue(_) => 6,
+        OmaAptError::PkgIsEssential(_) => 7,
+        OmaAptError::PkgNoCandidate(_) => 8,
+        OmaAptError::PkgNoChecksum(_) => 9,
+        OmaAptError::PkgUnavailable(_, _) => 10,
+        OmaAptError::InvalidFileName(_) => 11,
+        OmaAptError::DownloadError(_) => 12,
+        OmaAptError::FailedCreateAsyncRuntime(_) => 13,
+        OmaAptError::FailedOperateDirOrFile(_, _) => 14,
+        OmaAptError::FailedGetAvailableSpace(_) => 15,
+        OmaAptError::DpkgFailedConfigure(_) => 16,
+        OmaAptError::DiskSpaceInsufficient(_, _) => 17,
+        OmaAptError::CommitErr(_) => 18,
+        OmaAptError::MarkPkgNotInstalled(_) => 19,
+        OmaAptError::DpkgError(_) => 20,
+        OmaAptError::FailedToDownload(_, _) => 21,
+        OmaAptError::FailedGetParentPath(_) => 22,
+        OmaAptError::FailedGetCanonicalize(_, _) => 23,
+        OmaAptError::PtrIsNone(_) => 24,
+        OmaAptError::ChecksumError(_) => 25,
+        OmaAptError::Features => 26,
+    }
 }
 
 fn main() {
@@ -237,18 +268,27 @@ fn set_info(arg: &str, installer: &DebInstaller) {
             let info = get_package_info(&mut apt, arg);
             let resolve_res = apt.resolve(true, false, false);
 
-            let (mut status, info, mut can_install) = match info {
-                Ok(info) => ("".to_string(), Some(info), true),
-                Err(e) => (e.to_string(), None, false),
+            let (info, mut can_install) = match info {
+                Ok(info) => {
+                    installer.set_err_num(0);
+                    (Some(info), true)
+                }
+                Err(e) => {
+                    let err_num = u8_oma_pm_errors(&e);
+                    installer.set_err_num(err_num.into());
+                    installer.set_err(e.to_string().into());
+                    (None, false)
+                }
             };
 
             if let Err(e) = resolve_res {
-                status = e.to_string();
+                let err_num = u8_oma_pm_errors(&e);
+                installer.set_err_num(err_num.into());
+                installer.set_err(e.to_string().into());
                 can_install = false;
             }
 
             installer.set_can_install(can_install);
-            installer.set_status(status.into());
 
             if let Some(info) = info {
                 installer.set_package(info.package.to_string().into());
@@ -319,7 +359,7 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
     }
 }
 
-fn get_package_info(apt: &mut OmaApt, arg: &str) -> Result<PackageInfo> {
+fn get_package_info(apt: &mut OmaApt, arg: &str) -> Result<PackageInfo, OmaAptError> {
     let (pkgs, _) = apt.select_pkg(&[arg], false, true, false)?;
     apt.install(&pkgs, true)?;
     let pkg = pkgs.first().unwrap();
