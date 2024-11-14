@@ -17,7 +17,7 @@ use clap::Parser;
 use human_bytes::human_bytes;
 use num_enum::IntoPrimitive;
 use oma_pm::{
-    apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError},
+    apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError, SummarySort},
     pkginfo::OmaPackage,
 };
 use slint::ComponentHandle;
@@ -295,6 +295,16 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                 let pkg = oma_pkg.package(&apt.cache);
                 let version = oma_pkg.version(&apt.cache);
                 let info = oma_pkg.pkg_info(&apt.cache);
+
+                if let Err(e) = apt
+                    .summary(SummarySort::NoSort, |_| false, |_| false)
+                    .and_then(|summary| apt.check_disk_size(&summary))
+                {
+                    let err_num = u8_oma_pm_errors(&e);
+                    installer.set_err_num(err_num.into());
+                    installer.set_err(e.to_string().into());
+                    can_install = false;
+                }
 
                 let info = match info {
                     Ok(info) => Some(info),

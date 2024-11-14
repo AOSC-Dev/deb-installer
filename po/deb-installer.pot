@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2024-11-14 08:03+0000\n"
+"POT-Creation-Date: 2024-11-14 09:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,6 +30,11 @@ msgstr ""
 #: src/deb_installer.slint:21
 msgctxt "DebInstaller"
 msgid "Architecture not match"
+msgstr ""
+
+#: src/deb_installer.slint:21
+msgctxt "DebInstaller"
+msgid "Insufficient disk space"
 msgstr ""
 
 #: src/deb_installer.slint:22 src/deb_installer.slint:22
