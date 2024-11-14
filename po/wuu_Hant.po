@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-11-14 09:11+0000\n"
-"PO-Revision-Date: 2024-11-14 09:50+0000\n"
+"PO-Revision-Date: 2024-11-14 09:51+0000\n"
 "Last-Translator: Kaiyang Wu <origincode@aosc.io>\n"
 "Language-Team: Wu (Traditional Han script) <https://weblate.aosc.io/projects/"
 "deb-installer/deb-installer/wuu_Hant/>\n"
@@ -31,7 +31,7 @@ msgstr "依賴弗滿足"
 #: src/deb_installer.slint:21
 msgctxt "DebInstaller"
 msgid "Architecture not match"
-msgstr "架構弗匹配"
+msgstr "架構弗相配"
 
 #: src/deb_installer.slint:21
 msgctxt "DebInstaller"
