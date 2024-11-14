@@ -87,6 +87,7 @@ fn u8_oma_pm_errors(error: &OmaAptError) -> u8 {
         OmaAptError::PtrIsNone(_) => 24,
         OmaAptError::ChecksumError(_) => 25,
         OmaAptError::Features => 26,
+        OmaAptError::DpkgTriggers(_) => 27,
     }
 }
 
@@ -284,7 +285,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                 }
             };
 
-            if let Err(e) = apt.resolve(true, false, false) {
+            if let Err(e) = apt.resolve(true, false) {
                 let err_num = u8_oma_pm_errors(&e);
                 installer.set_err_num(err_num.into());
                 installer.set_err(e.to_string().into());

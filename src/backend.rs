@@ -118,7 +118,7 @@ impl Backend {
             let (pkgs, _) = apt.select_pkg(&[path.as_str()], false, true, false)?;
 
             apt.install(&pkgs, true)?;
-            apt.resolve(true, false, false)?;
+            apt.resolve(true, false)?;
 
             let client = ClientBuilder::new().user_agent("deb_installer").build()?;
             let op = apt.summary(SummarySort::NoSort, |_| false, |_| false)?;
