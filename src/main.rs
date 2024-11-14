@@ -208,8 +208,8 @@ fn ui(pkg: PathBuf) {
             if let Err(e) = res {
                 let _ = ui_weak_2.upgrade_in_event_loop(move |ui| {
                     let old = ui.get_message();
-                    let new_msg = format!("{}{}\n", old, e);
-                    ui.set_message(new_msg.into());
+                    let new_msg = slint::format!("{}{}\n", old, e);
+                    ui.set_message(new_msg);
                 });
             }
         });
@@ -229,8 +229,8 @@ fn ui(pkg: PathBuf) {
             Progress::Message(msg) => {
                 let _ = ui_weak.upgrade_in_event_loop(move |ui| {
                     let old = ui.get_message();
-                    let new_msg = format!("{}{}\n", old, msg);
-                    ui.set_message(new_msg.into());
+                    let new_msg = slint::format!("{}{}\n", old, msg);
+                    ui.set_message(new_msg);
                 });
             }
             Progress::Done => {
