@@ -11,14 +11,14 @@ use std::{
     time::Duration,
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use backend::Backend;
 use clap::Parser;
 use human_bytes::human_bytes;
 use num_enum::IntoPrimitive;
 use oma_pm::{
     apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError},
-    pkginfo::PackageInfo,
+    pkginfo::OmaPackage,
 };
 use slint::ComponentHandle;
 use tracing::{debug, error, level_filters::LevelFilter};
@@ -265,55 +265,81 @@ fn set_info(arg: &str, installer: &DebInstaller) {
 
     match apt {
         Ok(mut apt) => {
-            let info = get_package_info(&mut apt, arg);
-            let resolve_res = apt.resolve(true, false, false);
+            let info = get_package(&mut apt, arg);
 
-            let (info, mut can_install) = match info {
+            let (pkg, mut can_install) = match info {
                 Ok(info) => {
                     installer.set_err_num(0);
                     (Some(info), true)
                 }
                 Err(e) => {
-                    let err_num = u8_oma_pm_errors(&e);
-                    installer.set_err_num(err_num.into());
-                    installer.set_err(e.to_string().into());
+                    if let Some(e) = e.downcast_ref::<OmaAptError>() {
+                        let err_num = u8_oma_pm_errors(&e);
+                        installer.set_err_num(err_num.into());
+                        installer.set_err(e.to_string().into());
+                    } else {
+                        installer.set_err(e.to_string().into());
+                    }
                     (None, false)
                 }
             };
 
-            if let Err(e) = resolve_res {
+            if let Err(e) = apt.resolve(true, false, false) {
                 let err_num = u8_oma_pm_errors(&e);
                 installer.set_err_num(err_num.into());
                 installer.set_err(e.to_string().into());
                 can_install = false;
             }
 
-            installer.set_can_install(can_install);
+            if let Some(oma_pkg) = pkg {
+                let pkg = oma_pkg.package(&apt.cache);
+                let version = oma_pkg.version(&apt.cache);
+                let info = oma_pkg.pkg_info(&apt.cache);
 
-            if let Some(info) = info {
-                installer.set_package(info.package.to_string().into());
-                installer.set_metadata(info.to_string().into());
-                installer.set_description(info.short_description.into());
-                installer.set_version(info.version.to_string().into());
-                installer.set_installed_size(human_bytes(info.install_size as f64).into());
+                let info = match info {
+                    Ok(info) => Some(info),
+                    Err(e) => {
+                        let err_num = u8_oma_pm_errors(&e);
+                        installer.set_err_num(err_num.into());
+                        installer.set_err(e.to_string().into());
+                        can_install = false;
+                        None
+                    }
+                };
 
-                let mut action = InstallAction::Install;
+                installer.set_can_install(can_install);
 
-                if let Some(pkg) = apt.cache.get(&info.package) {
+                if let Some(info) = info {
+                    installer.set_package(info.package.to_string().into());
+                    installer.set_description(info.short_description.into());
+                    installer.set_version(info.version.to_string().into());
+                    installer.set_installed_size(human_bytes(info.install_size as f64).into());
+
+                    if !apt
+                        .get_architectures()
+                        .contains(&version.arch().to_string())
+                    {
+                        installer.set_err_num(100);
+                        installer.set_can_install(false);
+                    }
+
+                    let mut action = InstallAction::Install;
+
                     if let Some(installed) = pkg.installed() {
-                        let version = pkg.get_version(&info.version);
-                        if version.as_ref().is_some_and(|x| x > &installed) {
+                        if version > installed {
                             action = InstallAction::Upgrade
-                        } else if version.as_ref().is_some_and(|x| x < &installed) {
+                        } else if version < installed {
                             action = InstallAction::Downgrade
                         } else {
                             action = InstallAction::ReInstall
                         }
                     }
-                }
 
-                let action: u8 = action.into();
-                installer.set_action(action.into());
+                    let action: u8 = action.into();
+                    installer.set_action(action.into());
+                }
+            } else {
+                installer.set_can_install(false);
             }
         }
         Err(e) => {
@@ -373,13 +399,15 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
     }
 }
 
-fn get_package_info(apt: &mut OmaApt, arg: &str) -> Result<PackageInfo, OmaAptError> {
+fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
     let (pkgs, _) = apt.select_pkg(&[arg], false, true, false)?;
     apt.install(&pkgs, true)?;
-    let pkg = pkgs.first().unwrap();
-    let info = pkg.pkg_info(&apt.cache)?;
+    let pkg = pkgs
+        .first()
+        .context("Select pkg list is empty")?
+        .try_clone()?;
 
-    Ok(info)
+    Ok(pkg)
 }
 
 fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {

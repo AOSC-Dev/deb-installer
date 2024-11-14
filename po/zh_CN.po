@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2024-11-13 09:52+0000\n"
-"PO-Revision-Date: 2024-11-13 17:52+0800\n"
+"POT-Creation-Date: 2024-11-14 08:03+0000\n"
+"PO-Revision-Date: 2024-11-14 16:58+0800\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: zh_CN\n"
@@ -17,37 +17,42 @@ msgctxt "DebInstaller"
 msgid "Package Installation Wizard"
 msgstr "软件包安装向导"
 
-#: src/deb_installer.slint:22
+#: src/deb_installer.slint:21
 msgctxt "DebInstaller"
 msgid "OK to install"
 msgstr "可安装"
 
-#: src/deb_installer.slint:22
+#: src/deb_installer.slint:21
 msgctxt "DebInstaller"
 msgid "Dependencies unmet"
 msgstr "依赖未满足"
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:21
+msgctxt "DebInstaller"
+msgid "Architecture not match"
+msgstr "架构不匹配"
+
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Install"
 msgstr "安装"
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Reinstall"
 msgstr "重装"
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Upgrade"
 msgstr "升级"
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Downgrade"
 msgstr "降级"
 
-#: src/deb_installer.slint:107
+#: src/deb_installer.slint:106
 msgctxt "DebInstaller"
 msgid ""
 "Welcome to the software package installation wizard.\n"
@@ -61,22 +66,22 @@ msgid ""
 msgstr ""
 "欢迎使用软件包安装向导。\n"
 "\n"
-"请注意：许多第三方软件包尚未经过维护者测试或验证，其功能可能不完美，甚至包"
-"含恶意内容。\n"
+"请注意：许多第三方软件包尚未经过维护者测试或验证，其功能可能不完美，甚至"
+"包含恶意内容。\n"
 "\n"
 "要继续安装，请点击下方“{}”按钮（本向导将提示您输入管理员密码）。"
 
-#: src/deb_installer.slint:130
+#: src/deb_installer.slint:129
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr "取消"
 
-#: src/deb_installer.slint:148
+#: src/deb_installer.slint:147
 msgctxt "DebInstaller"
 msgid "Preparing for installation, please wait ..."
 msgstr "正在准备安装，请稍候 ..."
 
-#: src/deb_installer.slint:172
+#: src/deb_installer.slint:171
 msgctxt "DebInstaller"
 msgid "Finish"
 msgstr "完成"
