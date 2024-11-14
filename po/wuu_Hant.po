@@ -1,60 +1,66 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2024-11-13 08:36+0000\n"
-"PO-Revision-Date: 2024-11-13 10:08+0000\n"
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2024-11-14 08:03+0000\n"
+"PO-Revision-Date: 2024-11-14 17:00+0800\n"
 "Last-Translator: Kaiyang Wu <origincode@aosc.io>\n"
 "Language-Team: Wu (Traditional Han script) <https://weblate.aosc.io/projects/"
 "deb-installer/deb-installer/wuu_Hant/>\n"
-"Language: wuu_Hant\n"
+"Language: zh_TW\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.8.1\n"
+"X-Generator: Poedit 3.4.1\n"
 
 #: src/deb_installer.slint:4
 msgctxt "DebInstaller"
 msgid "Package Installation Wizard"
 msgstr "軟件包安裝嚮導"
 
-#: src/deb_installer.slint:22
+#: src/deb_installer.slint:21
 msgctxt "DebInstaller"
 msgid "OK to install"
 msgstr "可以安裝"
 
-#: src/deb_installer.slint:22
+#: src/deb_installer.slint:21
 msgctxt "DebInstaller"
 msgid "Dependencies unmet"
 msgstr "依賴弗滿足"
 
-#: src/deb_installer.slint:23 src/deb_installer.slint:23
+#: src/deb_installer.slint:21
+msgctxt "DebInstaller"
+msgid "Architecture not match"
+msgstr "架構弗匹配"
+
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Install"
 msgstr "安裝"
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Reinstall"
 msgstr "重新安裝"
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Upgrade"
 msgstr "更新"
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Downgrade"
 msgstr "降級"
 
-#: src/deb_installer.slint:105
+#: src/deb_installer.slint:106
 msgctxt "DebInstaller"
 msgid ""
-"Welcome to the software package installation wizard. Please note that many "
-"3rd-party software packages are not tested nor verified by your distribution "
-"maintainers (they may not function as expected, or may contain malicious "
-"content).\n"
+"Welcome to the software package installation wizard.\n"
+"\n"
+"Please note that many 3rd-party software packages are not tested nor "
+"verified by your distribution maintainers (they may not function as "
+"expected, or may contain malicious content).\n"
 "\n"
 "To install the package, press \"{}\" below and you will be prompted for "
 "administrative password."
@@ -66,17 +72,17 @@ msgstr ""
 "\n"
 "要繼續安裝，請撳下底隻“{}”按鈕（搿隻嚮導將會問儂要管理員密碼）。"
 
-#: src/deb_installer.slint:128
+#: src/deb_installer.slint:129
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr "取消"
 
-#: src/deb_installer.slint:145
+#: src/deb_installer.slint:147
 msgctxt "DebInstaller"
 msgid "Preparing for installation, please wait ..."
 msgstr "正當在許準備安裝，請些稍等歇……"
 
-#: src/deb_installer.slint:169
+#: src/deb_installer.slint:171
 msgctxt "DebInstaller"
 msgid "Finish"
 msgstr "完成"

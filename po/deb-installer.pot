@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2024-11-13 09:52+0000\n"
+"POT-Creation-Date: 2024-11-14 08:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,37 +17,42 @@ msgctxt "DebInstaller"
 msgid "Package Installation Wizard"
 msgstr ""
 
-#: src/deb_installer.slint:22
+#: src/deb_installer.slint:21
 msgctxt "DebInstaller"
 msgid "OK to install"
 msgstr ""
 
-#: src/deb_installer.slint:22
+#: src/deb_installer.slint:21
 msgctxt "DebInstaller"
 msgid "Dependencies unmet"
 msgstr ""
 
-#: src/deb_installer.slint:23 src/deb_installer.slint:23
+#: src/deb_installer.slint:21
+msgctxt "DebInstaller"
+msgid "Architecture not match"
+msgstr ""
+
+#: src/deb_installer.slint:22 src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Install"
 msgstr ""
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Reinstall"
 msgstr ""
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Upgrade"
 msgstr ""
 
-#: src/deb_installer.slint:23
+#: src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Downgrade"
 msgstr ""
 
-#: src/deb_installer.slint:107
+#: src/deb_installer.slint:106
 msgctxt "DebInstaller"
 msgid ""
 "Welcome to the software package installation wizard.\n"
@@ -60,17 +65,17 @@ msgid ""
 "administrative password."
 msgstr ""
 
-#: src/deb_installer.slint:130
+#: src/deb_installer.slint:129
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr ""
 
-#: src/deb_installer.slint:148
+#: src/deb_installer.slint:147
 msgctxt "DebInstaller"
 msgid "Preparing for installation, please wait ..."
 msgstr ""
 
-#: src/deb_installer.slint:172
+#: src/deb_installer.slint:171
 msgctxt "DebInstaller"
 msgid "Finish"
 msgstr ""
