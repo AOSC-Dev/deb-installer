@@ -161,12 +161,10 @@ fn main() {
 
         ui(package.canonicalize().unwrap());
     } else if backend {
-        tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap()
-            .block_on(run_backend())
-            .unwrap();
+        if let Err(e) = run_backend() {
+            error!("{e}");
+            exit(1);
+        }
     } else {
         eprintln!(
             "Usage: {} /path/to/package.deb",
@@ -462,16 +460,13 @@ fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()
             }
         });
 
-        let rt = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()?;
-
-        rt.block_on(on_install_inner(argc, tx))
+        on_install_inner(argc, tx)
     });
 
     t
 }
 
+#[tokio::main]
 async fn on_install_inner(argc: String, tx: flume::Sender<Progress>) -> Result<()> {
     let conn = Connection::system().await?;
     let client = OmaClientProxy::new(&conn).await?;
@@ -518,6 +513,7 @@ fn start_kde_debconf() -> Result<Child> {
     Ok(Command::new("debconf-kde-helper").spawn()?)
 }
 
+#[tokio::main]
 async fn run_backend() -> Result<()> {
     let backend = Backend::default();
 
