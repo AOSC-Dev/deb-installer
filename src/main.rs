@@ -324,6 +324,11 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                     installer.set_version(info.version.to_string().into());
                     installer.set_installed_size(human_bytes(info.install_size as f64).into());
 
+                    let mut archs = apt.get_architectures();
+
+                    // Should support noarch package
+                    archs.push("all".to_string());
+
                     if !apt
                         .get_architectures()
                         .contains(&version.arch().to_string())
