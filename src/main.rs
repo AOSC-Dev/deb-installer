@@ -329,10 +329,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                     // Should support noarch package
                     archs.push("all".to_string());
 
-                    if !apt
-                        .get_architectures()
-                        .contains(&version.arch().to_string())
-                    {
+                    if !archs.contains(&version.arch().to_string()) {
                         installer.set_err_num(100);
                         installer.set_can_install(false);
                     }
