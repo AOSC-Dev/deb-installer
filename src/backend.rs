@@ -11,8 +11,10 @@ use apt_auth_config::AuthConfig;
 use oma_fetch::DownloadProgressControl;
 use oma_pm::{
     apt::{AptConfig, CommitDownloadConfig, OmaApt, OmaAptArgs, SummarySort},
+    matches::PackagesMatcher,
     progress::InstallProgressManager,
 };
+use oma_utils::dpkg::dpkg_arch;
 use reqwest::ClientBuilder;
 use zbus::interface;
 
@@ -115,7 +117,16 @@ impl Backend {
                 AptConfig::new(),
             )?;
 
-            let (pkgs, _) = apt.select_pkg(&[path.as_str()], false, true, false)?;
+            let native_arch = dpkg_arch("/")?;
+            let matcher = PackagesMatcher::builder()
+                .filter_candidate(true)
+                .filter_downloadable_candidate(false)
+                .select_dbg(false)
+                .cache(&apt.cache)
+                .native_arch(&native_arch)
+                .build();
+
+            let pkgs = matcher.match_pkgs_and_versions_from_glob(&path)?;
 
             apt.install(&pkgs, true)?;
             apt.resolve(true, false)?;
@@ -160,7 +171,7 @@ impl Backend {
         "pong"
     }
 
-    fn exit(&mut self) -> bool {
+    fn exit(&self) -> bool {
         self.exit.store(true, Ordering::Relaxed);
         true
     }

@@ -18,8 +18,10 @@ use human_bytes::human_bytes;
 use num_enum::IntoPrimitive;
 use oma_pm::{
     apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError, SummarySort},
+    matches::PackagesMatcher,
     pkginfo::OmaPackage,
 };
+use oma_utils::dpkg::dpkg_arch;
 use slint::ComponentHandle;
 use tracing::{debug, error, level_filters::LevelFilter};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
@@ -411,14 +413,22 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
 }
 
 fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
-    let (pkgs, _) = apt.select_pkg(&[arg], false, true, false)?;
-    apt.install(&pkgs, true)?;
-    let pkg = pkgs
-        .first()
-        .context("Select pkg list is empty")?
-        .try_clone()?;
+    let native_arch = dpkg_arch("/")?;
+    let matcher = PackagesMatcher::builder()
+        .filter_candidate(true)
+        .filter_downloadable_candidate(false)
+        .select_dbg(false)
+        .cache(&apt.cache)
+        .native_arch(&native_arch)
+        .build();
 
-    Ok(pkg)
+    let pkgs = matcher.match_pkgs_and_versions_from_glob(arg)?;
+    apt.install(&pkgs, true)?;
+
+    Ok(pkgs
+        .first()
+        .context("Failed to get package from path")?
+        .try_clone()?)
 }
 
 fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {

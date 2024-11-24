@@ -6,10 +6,10 @@ edition = "2021"
 [dependencies]
 anyhow = { version = "1", features = ["backtrace"] }
 slint = { git = "https://github.com/slint-ui/slint", rev = "892471205e1bb62b4cdafb64031bb837b428cb7f", features = ["gettext"] }
-oma-pm = "0.41.0"
+oma-pm = "0.42.0"
 reqwest = "0.12"
 apt-auth-config = "0.2.0"
-oma-fetch = "0.17"
+oma-fetch = "0.19"
 tracing = "0.1"
 zbus = { version = "4.4",  features = ["tokio"] }
 tokio = { version = "1.41", features = ["rt", "rt-multi-thread", "macros"] }
@@ -20,6 +20,7 @@ console = "0.15"
 which = "7"
 human_bytes = "0.4.3"
 num_enum = "0.7.3"
+oma-utils = { version = "0.10", features = ["dpkg"] }
 
 [features]
 debug = []
