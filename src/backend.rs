@@ -1,26 +1,22 @@
 use std::{
-    env,
-    sync::{
-        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
+    env, sync::{
+        atomic::{AtomicBool, AtomicU32, Ordering},
         Arc,
-    },
-    thread::{self, JoinHandle},
+    }, thread::{self, JoinHandle}
 };
 
 use apt_auth_config::AuthConfig;
-use oma_fetch::DownloadProgressControl;
+use flume::unbounded;
 use oma_pm::{
     apt::{AptConfig, CommitDownloadConfig, OmaApt, OmaAptArgs, SummarySort},
     matches::PackagesMatcher,
     progress::InstallProgressManager,
 };
-use oma_utils::dpkg::dpkg_arch;
 use reqwest::ClientBuilder;
 use zbus::interface;
 
 pub struct Backend {
     install_thread: Option<JoinHandle<Result<(), anyhow::Error>>>,
-    pm: Arc<DownloadProgressManager>,
     install_pm: Arc<AtomicU32>,
     pub exit: Arc<AtomicBool>,
 }
@@ -29,51 +25,12 @@ impl Default for Backend {
     fn default() -> Self {
         Self {
             install_thread: None,
-            pm: Arc::new(DownloadProgressManager::default()),
             install_pm: Arc::new(AtomicU32::new(0)),
             exit: Arc::new(AtomicBool::new(false)),
         }
     }
 }
 
-pub struct DownloadProgressManager {
-    progress: AtomicU64,
-}
-
-impl Default for DownloadProgressManager {
-    fn default() -> Self {
-        Self {
-            progress: AtomicU64::new(0),
-        }
-    }
-}
-
-impl DownloadProgressControl for DownloadProgressManager {
-    fn checksum_mismatch_retry(&self, _index: usize, _filename: &str, _times: usize) {}
-
-    fn global_progress_set(&self, _num: &std::sync::atomic::AtomicU64) {
-        self.progress
-            .store(_num.load(Ordering::SeqCst), Ordering::SeqCst);
-    }
-
-    fn progress_done(&self, _index: usize) {}
-
-    fn new_progress_spinner(&self, _index: usize, _msg: &str) {}
-
-    fn new_progress_bar(&self, _index: usize, _msg: &str, _size: u64) {}
-
-    fn progress_inc(&self, _index: usize, _num: u64) {}
-
-    fn progress_set(&self, _index: usize, _num: u64) {}
-
-    fn failed_to_get_source_next_url(&self, _index: usize, _err: &str) {}
-
-    fn download_done(&self, _index: usize, _msg: &str) {}
-
-    fn all_done(&self) {}
-
-    fn new_global_progress_bar(&self, _total_size: u64) {}
-}
 
 struct DebInstallerInstallProgressManager {
     progress: Arc<AtomicU32>,
@@ -104,7 +61,6 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
 #[interface(name = "io.aosc.DebInstaller1")]
 impl Backend {
     fn install(&mut self, path: String) -> bool {
-        let pmc = self.pm.clone();
         let install_pm_clone = self.install_pm.clone();
         let thread = Some(thread::spawn(move || -> anyhow::Result<()> {
             env::set_var("DEBIAN_FRONTEND", "passthrough");
@@ -117,13 +73,11 @@ impl Backend {
                 AptConfig::new(),
             )?;
 
-            let native_arch = dpkg_arch("/")?;
             let matcher = PackagesMatcher::builder()
                 .filter_candidate(true)
                 .filter_downloadable_candidate(false)
                 .select_dbg(false)
                 .cache(&apt.cache)
-                .native_arch(&native_arch)
                 .build();
 
             let pkgs = matcher.match_pkgs_and_versions_from_glob(&path)?;
@@ -134,17 +88,19 @@ impl Backend {
             let client = ClientBuilder::new().user_agent("deb_installer").build()?;
             let op = apt.summary(SummarySort::NoSort, |_| false, |_| false)?;
 
+            let (tx, _rx) = unbounded();
+
             apt.commit(
                 &client,
                 CommitDownloadConfig {
                     auth: &AuthConfig::system("/")?,
                     network_thread: None,
                 },
-                &*pmc,
                 Box::new(DebInstallerInstallProgressManager {
                     progress: install_pm_clone.clone(),
                 }),
-                op,
+                tx,
+                &op,
             )?;
 
             install_pm_clone.store(100, Ordering::SeqCst);

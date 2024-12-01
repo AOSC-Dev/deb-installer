@@ -21,11 +21,10 @@ use oma_pm::{
     matches::PackagesMatcher,
     pkginfo::OmaPackage,
 };
-use oma_utils::dpkg::dpkg_arch;
 use slint::ComponentHandle;
 use tracing::{debug, error, level_filters::LevelFilter};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
-use zbus::{proxy, Connection, ConnectionBuilder};
+use zbus::{connection, proxy, Connection};
 
 use crate::deb_installer::DebInstaller;
 
@@ -413,13 +412,11 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
 }
 
 fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
-    let native_arch = dpkg_arch("/")?;
     let matcher = PackagesMatcher::builder()
         .filter_candidate(true)
         .filter_downloadable_candidate(false)
         .select_dbg(false)
         .cache(&apt.cache)
-        .native_arch(&native_arch)
         .build();
 
     let pkgs = matcher.match_pkgs_and_versions_from_glob(arg)?;
@@ -531,7 +528,7 @@ async fn run_backend() -> Result<()> {
 
     let exit = backend.exit.clone();
 
-    let _conn = ConnectionBuilder::system()?
+    let _conn = connection::Builder::system()?
         .name("io.aosc.DebInstaller")?
         .serve_at("/io/aosc/DebInstaller", backend)?
         .build()
