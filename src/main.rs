@@ -430,13 +430,16 @@ fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
 
 fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {
     let t = thread::spawn(move || -> Result<()> {
-        let mut backend_child = start_backend()?;
-
         let txc = tx.clone();
         let txc2 = tx.clone();
+        let txc3 = tx.clone();
+
+        let mut backend_child = start_backend()?;
+        let stdout = backend_child.stdout.take();
+        let stderr = backend_child.stderr.take();
 
         thread::spawn(move || {
-            if let Some(out) = backend_child.stdout.take() {
+            if let Some(out) = stdout {
                 let reader = BufReader::new(out);
                 reader.lines().for_each(|line| match line {
                     Ok(line) => {
@@ -454,7 +457,7 @@ fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()
         });
 
         thread::spawn(move || {
-            if let Some(out) = backend_child.stderr.take() {
+            if let Some(out) = stderr {
                 let reader = BufReader::new(out);
                 reader.lines().for_each(|line| match line {
                     Ok(line) => {
@@ -467,6 +470,16 @@ fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()
                     }
                 });
             }
+        });
+
+        thread::spawn(move || loop {
+            let wait = backend_child.try_wait();
+            if wait.as_ref().is_ok_and(|x| x.is_some()) || wait.as_ref().is_err() {
+                if let Err(e) = txc3.send(Progress::Done) {
+                    error!("{e}");
+                }
+            }
+            thread::sleep(Duration::from_millis(100));
         });
 
         on_install_inner(argc, tx)
