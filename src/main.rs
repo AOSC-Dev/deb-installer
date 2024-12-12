@@ -274,7 +274,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                 }
                 Err(e) => {
                     if let Some(e) = e.downcast_ref::<OmaAptError>() {
-                        let err_num = u8_oma_pm_errors(&e);
+                        let err_num = u8_oma_pm_errors(e);
                         installer.set_err_num(err_num.into());
                         installer.set_err(e.to_string().into());
                     } else {
@@ -338,13 +338,11 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                     let mut action = InstallAction::Install;
 
                     if let Some(installed) = pkg.installed() {
-                        if version > installed {
-                            action = InstallAction::Upgrade
-                        } else if version < installed {
-                            action = InstallAction::Downgrade
-                        } else {
-                            action = InstallAction::ReInstall
-                        }
+                        action = match version.cmp(&installed) {
+                            std::cmp::Ordering::Less => InstallAction::Downgrade,
+                            std::cmp::Ordering::Equal => InstallAction::ReInstall,
+                            std::cmp::Ordering::Greater => InstallAction::Upgrade,
+                        };
                     }
 
                     let action: u8 = action.into();
@@ -472,14 +470,11 @@ fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()
             }
         });
 
-        thread::spawn(move || loop {
-            let wait = backend_child.try_wait();
-            if wait.as_ref().is_ok_and(|x| x.is_some()) || wait.as_ref().is_err() {
-                if let Err(e) = txc3.send(Progress::Done) {
-                    error!("{e}");
-                }
+        thread::spawn(move || {
+            let _wait = backend_child.wait();
+            if let Err(e) = txc3.send(Progress::Done) {
+                error!("{e}");
             }
-            thread::sleep(Duration::from_millis(100));
         });
 
         on_install_inner(argc, tx)
