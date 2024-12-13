@@ -1,8 +1,10 @@
 use std::{
-    env, sync::{
+    env,
+    sync::{
         atomic::{AtomicBool, AtomicU32, Ordering},
         Arc,
-    }, thread::{self, JoinHandle}
+    },
+    thread::{self, JoinHandle},
 };
 
 use apt_auth_config::AuthConfig;
@@ -30,7 +32,6 @@ impl Default for Backend {
         }
     }
 }
-
 
 struct DebInstallerInstallProgressManager {
     progress: Arc<AtomicU32>,

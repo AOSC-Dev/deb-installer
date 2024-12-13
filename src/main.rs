@@ -274,7 +274,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                 }
                 Err(e) => {
                     if let Some(e) = e.downcast_ref::<OmaAptError>() {
-                        let err_num = u8_oma_pm_errors(&e);
+                        let err_num = u8_oma_pm_errors(e);
                         installer.set_err_num(err_num.into());
                         installer.set_err(e.to_string().into());
                     } else {
@@ -338,13 +338,11 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                     let mut action = InstallAction::Install;
 
                     if let Some(installed) = pkg.installed() {
-                        if version > installed {
-                            action = InstallAction::Upgrade
-                        } else if version < installed {
-                            action = InstallAction::Downgrade
-                        } else {
-                            action = InstallAction::ReInstall
-                        }
+                        action = match version.cmp(&installed) {
+                            std::cmp::Ordering::Less => InstallAction::Downgrade,
+                            std::cmp::Ordering::Equal => InstallAction::ReInstall,
+                            std::cmp::Ordering::Greater => InstallAction::Upgrade,
+                        };
                     }
 
                     let action: u8 = action.into();
@@ -430,13 +428,16 @@ fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
 
 fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {
     let t = thread::spawn(move || -> Result<()> {
-        let mut backend_child = start_backend()?;
-
         let txc = tx.clone();
         let txc2 = tx.clone();
+        let txc3 = tx.clone();
+
+        let mut backend_child = start_backend()?;
+        let stdout = backend_child.stdout.take();
+        let stderr = backend_child.stderr.take();
 
         thread::spawn(move || {
-            if let Some(out) = backend_child.stdout.take() {
+            if let Some(out) = stdout {
                 let reader = BufReader::new(out);
                 reader.lines().for_each(|line| match line {
                     Ok(line) => {
@@ -454,7 +455,7 @@ fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()
         });
 
         thread::spawn(move || {
-            if let Some(out) = backend_child.stderr.take() {
+            if let Some(out) = stderr {
                 let reader = BufReader::new(out);
                 reader.lines().for_each(|line| match line {
                     Ok(line) => {
@@ -466,6 +467,13 @@ fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()
                         error!("{e}")
                     }
                 });
+            }
+        });
+
+        thread::spawn(move || {
+            let _wait = backend_child.wait();
+            if let Err(e) = txc3.send(Progress::Done) {
+                error!("{e}");
             }
         });
 
