@@ -754,9 +754,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.4"
+version = "1.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9157bbaa6b165880c27a4293a474c91cdcf265cc68cc829bf10be0964a391caf"
+checksum = "c31a0499c1dc64f458ad13872de75c0eb7e3fdb0e67964610c914b034fc5956e"
 dependencies = [
  "jobserver",
  "libc",
@@ -3628,14 +3628,13 @@ dependencies = [
 
 [[package]]
 name = "oma-fetch"
-version = "0.21.0"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef63fc5bda5f2cece8085173bbc2f222220210eacf96fb2624ce072f452807f5"
+checksum = "0dc17bb4794290f7ccd6c3e509489fa97ebab7c5349ac22c3b002e8f9820b5d1"
 dependencies = [
  "async-compression",
  "bon",
  "faster-hex",
- "flume",
  "futures",
  "md-5",
  "oma-utils",
@@ -3650,16 +3649,15 @@ dependencies = [
 
 [[package]]
 name = "oma-pm"
-version = "0.44.0"
+version = "0.45.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78c499ea53634bd5eee432794327e10ae90e1759d0179a848fb1ab2bbe0b554f"
+checksum = "24b48e44e908132c0985d607fd98ad90e9293ca9c41fa9a2caf54a3a75a108dc"
 dependencies = [
  "ahash",
  "apt-auth-config",
  "bon",
  "chrono",
  "cxx",
- "flume",
  "fs4",
  "glob-match",
  "indexmap",

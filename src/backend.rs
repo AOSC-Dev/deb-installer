@@ -8,11 +8,11 @@ use std::{
 };
 
 use apt_auth_config::AuthConfig;
-use flume::unbounded;
 use oma_pm::{
-    apt::{AptConfig, CommitDownloadConfig, OmaApt, OmaAptArgs, SummarySort},
+    apt::{AptConfig, OmaApt, OmaAptArgs, SummarySort},
     matches::PackagesMatcher,
     progress::InstallProgressManager,
+    CommitNetworkConfig,
 };
 use reqwest::ClientBuilder;
 use zbus::interface;
@@ -89,19 +89,17 @@ impl Backend {
             let client = ClientBuilder::new().user_agent("deb_installer").build()?;
             let op = apt.summary(SummarySort::NoSort, |_| false, |_| false)?;
 
-            let (tx, _rx) = unbounded();
-
             apt.commit(
-                &client,
-                CommitDownloadConfig {
-                    auth: &AuthConfig::system("/")?,
-                    network_thread: None,
-                },
                 Box::new(DebInstallerInstallProgressManager {
                     progress: install_pm_clone.clone(),
                 }),
-                tx,
                 &op,
+                &client,
+                CommitNetworkConfig {
+                    auth_config: &AuthConfig::system("/")?,
+                    network_thread: None,
+                },
+                |_| async {},
             )?;
 
             install_pm_clone.store(100, Ordering::SeqCst);
