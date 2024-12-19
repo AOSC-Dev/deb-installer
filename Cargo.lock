@@ -1353,7 +1353,6 @@ dependencies = [
  "flume",
  "human_bytes",
  "num_enum",
- "oma-fetch",
  "oma-pm",
  "reqwest",
  "slint",

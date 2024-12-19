@@ -9,7 +9,6 @@ slint = { git = "https://github.com/slint-ui/slint", rev = "892471205e1bb62b4cda
 oma-pm = "0.44.0"
 reqwest = "0.12"
 apt-auth-config = "0.2.0"
-oma-fetch = "0.21"
 tracing = "0.1"
 zbus = { version = "5",  features = ["tokio"] }
 tokio = { version = "1.41", features = ["rt", "rt-multi-thread", "macros"] }
