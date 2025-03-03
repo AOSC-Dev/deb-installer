@@ -2,10 +2,10 @@ use std::{
     env::current_exe,
     io::{BufRead, BufReader},
     path::PathBuf,
-    process::{self, exit, Child, Command, Stdio},
+    process::{self, Child, Command, Stdio, exit},
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
     thread::{self, JoinHandle},
     time::Duration,
@@ -23,8 +23,8 @@ use oma_pm::{
 };
 use slint::ComponentHandle;
 use tracing::{debug, error, level_filters::LevelFilter};
-use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
-use zbus::{connection, proxy, Connection};
+use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
+use zbus::{Connection, connection, proxy};
 
 use crate::deb_installer::DebInstaller;
 
@@ -215,28 +215,30 @@ fn ui(pkg: PathBuf) {
         });
     });
 
-    thread::spawn(move || loop {
-        let Ok(progress) = progress_rx.recv() else {
-            break;
-        };
+    thread::spawn(move || {
+        loop {
+            let Ok(progress) = progress_rx.recv() else {
+                break;
+            };
 
-        match progress {
-            Progress::Percent(p) => {
-                let _ = ui_weak.upgrade_in_event_loop(move |ui| {
-                    ui.set_progress(p as f32 / 100.0);
-                });
-            }
-            Progress::Message(msg) => {
-                let _ = ui_weak.upgrade_in_event_loop(move |ui| {
-                    let old = ui.get_message();
-                    let new_msg = slint::format!("{}{}\n", old, msg);
-                    ui.set_message(new_msg);
-                });
-            }
-            Progress::Done => {
-                let _ = ui_weak.upgrade_in_event_loop(move |ui| {
-                    ui.set_finished(true);
-                });
+            match progress {
+                Progress::Percent(p) => {
+                    let _ = ui_weak.upgrade_in_event_loop(move |ui| {
+                        ui.set_progress(p as f32 / 100.0);
+                    });
+                }
+                Progress::Message(msg) => {
+                    let _ = ui_weak.upgrade_in_event_loop(move |ui| {
+                        let old = ui.get_message();
+                        let new_msg = slint::format!("{}{}\n", old, msg);
+                        ui.set_message(new_msg);
+                    });
+                }
+                Progress::Done => {
+                    let _ = ui_weak.upgrade_in_event_loop(move |ui| {
+                        ui.set_finished(true);
+                    });
+                }
             }
         }
     });
@@ -397,14 +399,16 @@ fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
     });
 
     if let Some(mut child) = debconf_child {
-        thread::spawn(move || loop {
-            // 接收杀死 debconf-helper 请求
-            if kc.load(Ordering::SeqCst) {
-                let _ = child.kill();
-                can_exit.store(true, Ordering::SeqCst);
-                break;
+        thread::spawn(move || {
+            loop {
+                // 接收杀死 debconf-helper 请求
+                if kc.load(Ordering::SeqCst) {
+                    let _ = child.kill();
+                    can_exit.store(true, Ordering::SeqCst);
+                    break;
+                }
+                thread::sleep(Duration::from_millis(100));
             }
-            thread::sleep(Duration::from_millis(100));
         });
     }
 }

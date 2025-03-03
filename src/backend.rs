@@ -1,18 +1,18 @@
 use std::{
     env,
     sync::{
-        atomic::{AtomicBool, AtomicU32, Ordering},
         Arc,
+        atomic::{AtomicBool, AtomicU32, Ordering},
     },
     thread::{self, JoinHandle},
 };
 
 use apt_auth_config::AuthConfig;
 use oma_pm::{
+    CommitNetworkConfig,
     apt::{AptConfig, OmaApt, OmaAptArgs, SummarySort},
     matches::PackagesMatcher,
     progress::InstallProgressManager,
-    CommitNetworkConfig,
 };
 use reqwest::ClientBuilder;
 use zbus::interface;
@@ -64,8 +64,10 @@ impl Backend {
     fn install(&mut self, path: String) -> bool {
         let install_pm_clone = self.install_pm.clone();
         let thread = Some(thread::spawn(move || -> anyhow::Result<()> {
-            env::set_var("DEBIAN_FRONTEND", "passthrough");
-            env::set_var("DEBCONF_PIPE", "/tmp/debkonf-sock");
+            unsafe {
+                env::set_var("DEBIAN_FRONTEND", "passthrough");
+                env::set_var("DEBCONF_PIPE", "/tmp/debkonf-sock");
+            }
 
             let mut apt = OmaApt::new(
                 vec![path.to_string()],
