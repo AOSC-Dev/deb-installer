@@ -7,7 +7,6 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use apt_auth_config::AuthConfig;
 use oma_pm::{
     CommitNetworkConfig,
     apt::{AptConfig, OmaApt, OmaAptArgs, SummarySort},
@@ -98,7 +97,7 @@ impl Backend {
                 &op,
                 &client,
                 CommitNetworkConfig {
-                    auth_config: &AuthConfig::system("/")?,
+                    auth_config: None,
                     network_thread: None,
                 },
                 |_| async {},

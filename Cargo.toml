@@ -6,9 +6,8 @@ edition = "2024"
 [dependencies]
 anyhow = { version = "1", features = ["backtrace"] }
 slint = { version = "1.10", features = ["gettext"] }
-oma-pm = "0.45.0"
+oma-pm = "0.47.0"
 reqwest = "0.12"
-apt-auth-config = "0.2.0"
 tracing = "0.1"
 zbus = { version = "5",  features = ["tokio"] }
 tokio = { version = "1.41", features = ["rt", "rt-multi-thread", "macros"] }
