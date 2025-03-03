@@ -2,8 +2,8 @@ import { GroupBox, HorizontalBox, GridBox, TabWidget, VerticalBox, Button, TextE
 
 export component DebInstaller inherits Window {
     title: @tr("Package Installation Wizard");
-    width: 500px;
-    height: 320px;
+    min-width: 650px;
+    min-height: 450px;
     icon: @image-url("../data/io.aosc.deb_installer.svg");
 
     in-out property <string> package;
@@ -38,7 +38,7 @@ export component DebInstaller inherits Window {
                         Text {
                             vertical-alignment: top;
                             horizontal-alignment: left;
-                            font-size: 24px;
+                            font-size: 28px;
                             font-weight: 600;
                             text: root.package;
                             overflow: elide;
@@ -53,6 +53,7 @@ export component DebInstaller inherits Window {
                         Text {
                             vertical-alignment: top;
                             horizontal-alignment: left;
+                            font-size: 13px;
                             color: root.err-num == 0 ? Palette.control-foreground : #aa0000;
                             text: root.version + " · " + root.installed-size + " · " + root.status;
                             overflow: elide;
@@ -67,6 +68,7 @@ export component DebInstaller inherits Window {
                         Text {
                             vertical-alignment: top;
                             horizontal-alignment: left;
+                            font-size: 13px;
                             text: root.description;
                             overflow: elide;
                             width: 90%;
@@ -99,10 +101,11 @@ export component DebInstaller inherits Window {
             HorizontalBox {
                 padding-top: 15px;
                 padding-left: 20px;
-                padding-right: 30px;
+                padding-right: 90px;
                 Text {
                     vertical-alignment: top;
                     horizontal-alignment: left;
+                    font-size: 14px;
                     text: @tr("Welcome to the software package installation wizard.\n\nPlease note that many 3rd-party software packages are not tested nor verified by your distribution maintainers (they may not function as expected, or may contain malicious content).\n\nTo install the package, press \"{}\" below and you will be prompted for administrative password.", root.install-button-name);
                     wrap: word-wrap;
                 }
