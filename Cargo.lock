@@ -256,9 +256,9 @@ dependencies = [
 
 [[package]]
 name = "apt-auth-config"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3cb0586097d1c8ea5f0f311d981b91253264fb2845a20c25eb8ceaef22ce9cb"
+checksum = "7521a8c36898c6981644d66638806575045a5b63763c372fbbc7ccd0f15ea7b1"
 dependencies = [
  "rust-netrc",
  "thiserror 2.0.12",
@@ -1874,12 +1874,12 @@ dependencies = [
 
 [[package]]
 name = "fs4"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c29c30684418547d476f0b48e84f4821639119c483b1eccd566c8cd0cd05f521"
+checksum = "be058769cf1633370c3d0dac6bb9b223b8f18900cf808abadf7843192e706238"
 dependencies = [
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4052,9 +4052,9 @@ dependencies = [
 
 [[package]]
 name = "oma-console"
-version = "0.26.0"
+version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ed8652e5d643c72cc2e2be160f6aa679556dff37864aa1a6a994b1435ef0dbd"
+checksum = "b9bf6137054ca67c8b737690384b66648e7e3575cbaefdf0609d4b90fd521971"
 dependencies = [
  "console",
  "termbg-with-async-stdin",
@@ -4065,16 +4065,16 @@ dependencies = [
 
 [[package]]
 name = "oma-fetch"
-version = "0.25.0"
+version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28b92b29c1fb6eb5b5bcc2aef596d3fb44de3ae4ca6a3c2e645eb889e4de5544"
+checksum = "c86b21bbcab4e55b52865d893dba19e9183c100a45a0d3ab8379b3a4a290c600"
 dependencies = [
  "async-compression",
  "bon",
  "faster-hex",
  "futures",
  "md-5",
- "oma-utils",
+ "oma-utils 0.10.5",
  "reqwest",
  "serde",
  "sha2",
@@ -4087,9 +4087,9 @@ dependencies = [
 
 [[package]]
 name = "oma-pm"
-version = "0.47.0"
+version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e460d00fae4ea24758cd4009260162c6fd8720c40357276fbc3bdc40fa67a0b"
+checksum = "9241b231a971d6a6ae5817528386ff2faf99d0119c7940d7c901b6b88eb0e236"
 dependencies = [
  "ahash",
  "apt-auth-config",
@@ -4105,7 +4105,7 @@ dependencies = [
  "oma-console",
  "oma-fetch",
  "oma-pm-operation-type",
- "oma-utils",
+ "oma-utils 0.11.0",
  "once_cell",
  "serde",
  "strsim",
@@ -4117,13 +4117,13 @@ dependencies = [
 
 [[package]]
 name = "oma-pm-operation-type"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "621b78269d4cd07e1c2ecc01861fb921aa5cdf84416a00bbd4e59bf0bb67485d"
+checksum = "72f1663e0fdcf17e38d22b4b3bf5feab91ddaaa270ecc6682a7380689cbfdcf4"
 dependencies = [
  "bon",
  "num_enum",
- "oma-utils",
+ "oma-utils 0.11.0",
  "serde",
 ]
 
@@ -4132,6 +4132,19 @@ name = "oma-utils"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9cc949eb58cea030ee5a1565d0313476892e25025850e5c6946e69311151c5a1"
+dependencies = [
+ "logind-zbus",
+ "os-release",
+ "thiserror 2.0.12",
+ "tracing",
+ "url-escape",
+]
+
+[[package]]
+name = "oma-utils"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4844861a788a83a5d703952b795cacc9eccf71aa0bb08c982de9b91fe2b1efe"
 dependencies = [
  "logind-zbus",
  "number_prefix",
@@ -4376,9 +4389,9 @@ dependencies = [
 
 [[package]]
 name = "pkg-config"
-version = "0.3.31"
+version = "0.3.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
+checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 
 [[package]]
 name = "png"
@@ -5056,9 +5069,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.139"
+version = "1.0.140"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44f86c3acccc9c65b153fe1b85a3be07fe5515274ec9f0653b4a0875731c72a6"
+checksum = "20068b6e96dc6c9bd23e01df8827e6c7e1f2fddd43c21810382803c136b99373"
 dependencies = [
  "itoa",
  "memchr",
