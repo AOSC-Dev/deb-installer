@@ -7,6 +7,7 @@ use std::{
     thread::{self, JoinHandle},
 };
 
+use flume::unbounded;
 use oma_pm::{
     CommitNetworkConfig,
     apt::{AptConfig, OmaApt, OmaAptArgs, SummarySort},
@@ -14,6 +15,7 @@ use oma_pm::{
     progress::InstallProgressManager,
 };
 use reqwest::ClientBuilder;
+use tracing::debug;
 use zbus::interface;
 
 pub struct Backend {
@@ -87,8 +89,16 @@ impl Backend {
             apt.install(&pkgs, true)?;
             apt.resolve(true, false)?;
 
-            let client = ClientBuilder::new().user_agent("deb_installer").build()?;
+            let client = ClientBuilder::new().user_agent("oma/1.14.514").build()?;
             let op = apt.summary(SummarySort::NoSort, |_| false, |_| false)?;
+
+            let (download_tx, download_rx) = unbounded();
+
+            thread::spawn(move || {
+                while let Ok(event) = download_rx.recv() {
+                    println!("{:?}", event);
+                }
+            });
 
             apt.commit(
                 Box::new(DebInstallerInstallProgressManager {
@@ -100,7 +110,11 @@ impl Backend {
                     auth_config: None,
                     network_thread: None,
                 },
-                |_| async {},
+                |event| async {
+                    if let Err(e) = download_tx.send_async(event).await {
+                        debug!("Send progress channel got error: {}; maybe check archive work still in progress", e);
+                    }
+                },
             )?;
 
             install_pm_clone.store(100, Ordering::SeqCst);
@@ -121,6 +135,23 @@ impl Backend {
         self.install_thread
             .as_ref()
             .is_some_and(|x| x.is_finished())
+    }
+
+    fn finished_get_result(&mut self) -> String {
+        let Some(t) = self.install_thread.take() else {
+            return "BUG: Install thread does not exist".to_string();
+        };
+
+        let res = match t.join() {
+            Ok(t) => t,
+            Err(e) => return format!("BUG: Failed to wait install thread: {:?}", e),
+        };
+
+        if let Err(e) = res {
+            e.to_string()
+        } else {
+            "ok".to_string()
+        }
     }
 
     fn ping(&self) -> &'static str {
