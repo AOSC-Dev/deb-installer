@@ -123,6 +123,23 @@ impl Backend {
             .is_some_and(|x| x.is_finished())
     }
 
+    fn finished_get_result(&mut self) -> String {
+        let Some(t) = self.install_thread.take() else {
+            return "BUG: Install thread does not exist".to_string();
+        };
+
+        let res = match t.join() {
+            Ok(t) => t,
+            Err(e) => return format!("BUG: Failed to wait install thread: {:?}", e),
+        };
+
+        if let Err(e) = res {
+            e.to_string()
+        } else {
+            "ok".to_string()
+        }
+    }
+
     fn ping(&self) -> &'static str {
         "pong"
     }
