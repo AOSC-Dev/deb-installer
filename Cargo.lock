@@ -1413,6 +1413,7 @@ dependencies = [
  "flume",
  "human_bytes",
  "num_enum",
+ "oma-fetch",
  "oma-pm",
  "reqwest",
  "slint",
@@ -4065,16 +4066,16 @@ dependencies = [
 
 [[package]]
 name = "oma-fetch"
-version = "0.26.0"
+version = "0.26.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c86b21bbcab4e55b52865d893dba19e9183c100a45a0d3ab8379b3a4a290c600"
+checksum = "6889c8aa3366c2f0009c3ecaa28b1208e4ec20b24b11b16e9d4197d9e7268a25"
 dependencies = [
  "async-compression",
  "bon",
  "faster-hex",
  "futures",
  "md-5",
- "oma-utils 0.10.5",
+ "oma-utils",
  "reqwest",
  "serde",
  "sha2",
@@ -4105,7 +4106,7 @@ dependencies = [
  "oma-console",
  "oma-fetch",
  "oma-pm-operation-type",
- "oma-utils 0.11.0",
+ "oma-utils",
  "once_cell",
  "serde",
  "strsim",
@@ -4123,21 +4124,8 @@ checksum = "72f1663e0fdcf17e38d22b4b3bf5feab91ddaaa270ecc6682a7380689cbfdcf4"
 dependencies = [
  "bon",
  "num_enum",
- "oma-utils 0.11.0",
+ "oma-utils",
  "serde",
-]
-
-[[package]]
-name = "oma-utils"
-version = "0.10.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cc949eb58cea030ee5a1565d0313476892e25025850e5c6946e69311151c5a1"
-dependencies = [
- "logind-zbus",
- "os-release",
- "thiserror 2.0.12",
- "tracing",
- "url-escape",
 ]
 
 [[package]]
