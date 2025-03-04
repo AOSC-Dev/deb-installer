@@ -89,7 +89,7 @@ impl Backend {
             apt.install(&pkgs, true)?;
             apt.resolve(true, false)?;
 
-            let client = ClientBuilder::new().user_agent("deb_installer").build()?;
+            let client = ClientBuilder::new().user_agent("oma/1.14.514").build()?;
             let op = apt.summary(SummarySort::NoSort, |_| false, |_| false)?;
 
             let (download_tx, download_rx) = unbounded();
