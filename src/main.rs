@@ -51,6 +51,7 @@ trait OmaClient {
     async fn get_progress(&self) -> zbus::Result<u32>;
     async fn ping(&self) -> zbus::Result<String>;
     async fn is_finished(&self) -> zbus::Result<bool>;
+    async fn finished_get_result(&self) -> zbus::Result<String>;
     async fn exit(&self) -> zbus::Result<bool>;
 }
 
@@ -509,6 +510,8 @@ async fn on_install_inner(argc: String, tx: flume::Sender<Progress>) -> Result<(
         tx.send_async(Progress::Percent(progress)).await?;
 
         if progress == 100 || is_finished {
+            let res = client.finished_get_result().await?;
+            tx.send_async(Progress::Message(res)).await?;
             tx.send_async(Progress::Done).await?;
             client.exit().await?;
             return Ok(());
