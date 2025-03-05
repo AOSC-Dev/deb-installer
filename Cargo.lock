@@ -1415,6 +1415,7 @@ dependencies = [
  "num_enum",
  "oma-fetch",
  "oma-pm",
+ "oma-utils",
  "reqwest",
  "slint",
  "tokio",

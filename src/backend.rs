@@ -1,21 +1,26 @@
 use std::{
+    cell::OnceCell,
     env,
     sync::{
         Arc,
         atomic::{AtomicBool, AtomicU32, Ordering},
     },
     thread::{self, JoinHandle},
+    time::{Duration, Instant},
 };
 
+use anyhow::Chain;
 use flume::unbounded;
+use oma_fetch::{Event, SingleDownloadError};
 use oma_pm::{
     CommitNetworkConfig,
     apt::{AptConfig, OmaApt, OmaAptArgs, SummarySort},
     matches::PackagesMatcher,
     progress::InstallProgressManager,
 };
+use oma_utils::human_bytes::HumanBytes;
 use reqwest::ClientBuilder;
-use tracing::debug;
+use tracing::{debug, error, info};
 use zbus::interface;
 
 pub struct Backend {
@@ -36,6 +41,121 @@ impl Default for Backend {
 
 struct DebInstallerInstallProgressManager {
     progress: Arc<AtomicU32>,
+}
+
+pub trait RenderPackagesDownloadProgress {
+    fn render_progress(&mut self, rx: &flume::Receiver<Event>);
+}
+
+impl Default for NoProgressBar {
+    fn default() -> Self {
+        Self {
+            timer: Instant::now(),
+            total_size: OnceCell::new(),
+            old_downloaded: 0,
+            progress: 0,
+        }
+    }
+}
+
+pub struct NoProgressBar {
+    timer: Instant,
+    total_size: OnceCell<u64>,
+    old_downloaded: u64,
+    progress: u64,
+}
+
+impl RenderPackagesDownloadProgress for NoProgressBar {
+    fn render_progress(&mut self, rx: &flume::Receiver<Event>) {
+        while let Ok(event) = rx.recv() {
+            if self.download_event(event) {
+                break;
+            }
+        }
+    }
+}
+
+impl NoProgressBar {
+    fn download_event(&mut self, event: Event) -> bool {
+        match event {
+            Event::ChecksumMismatch {
+                index: _,
+                filename,
+                times,
+            } => {
+                error!(
+                    "Checksum verification failed for {}. Retrying {} times ...",
+                    filename, times
+                );
+            }
+            Event::GlobalProgressAdd(inc) => {
+                self.progress += inc;
+                self.print_progress();
+            }
+            Event::GlobalProgressSub(num) => {
+                self.progress = self.progress.saturating_sub(num);
+                self.print_progress();
+            }
+            Event::NextUrl {
+                index: _,
+                file_name,
+                err,
+            } => {
+                handle_no_pb_download_error(file_name, err);
+                info!("Retrying using the next available mirror ...");
+            }
+            Event::DownloadDone { index: _, msg } => {
+                info!("Done: {msg}");
+            }
+            Event::AllDone => return true,
+            Event::NewGlobalProgressBar(total_size) => {
+                self.total_size.get_or_init(|| total_size);
+            }
+            Event::Failed { file_name, error } => {
+                handle_no_pb_download_error(file_name, error);
+            }
+            _ => {}
+        };
+
+        false
+    }
+
+    fn print_progress(&mut self) {
+        let elapsed = self.timer.elapsed();
+        if elapsed >= Duration::from_secs(3) {
+            if let Some(total_size) = self.total_size.get() {
+                info!(
+                    "{} / {} ({}/s)",
+                    HumanBytes(self.progress),
+                    HumanBytes(*total_size),
+                    HumanBytes((self.progress - self.old_downloaded) / elapsed.as_secs())
+                );
+                self.old_downloaded = self.progress;
+            } else {
+                info!("Downloaded {}", HumanBytes(self.progress));
+            }
+            self.timer = Instant::now();
+        }
+    }
+}
+
+fn handle_no_pb_download_error(file_name: String, error: SingleDownloadError) {
+    let errs = Chain::new(&error).collect::<Vec<_>>();
+    let first_cause = errs.first().unwrap().to_string();
+    let last = errs.iter().skip(1).last();
+
+    if let Some(last_cause) = last {
+        let reason = format!("{}: {}", first_cause, last_cause);
+        error!(
+            "Failed to download package {}, Reason: {}.",
+            file_name, reason
+        );
+    } else {
+        error!(
+            "Failed to download package {}, Reason: {}.",
+            file_name, first_cause
+        );
+    }
 }
 
 impl InstallProgressManager for DebInstallerInstallProgressManager {
@@ -95,9 +215,8 @@ impl Backend {
             let (download_tx, download_rx) = unbounded();
 
             thread::spawn(move || {
-                while let Ok(event) = download_rx.recv() {
-                    println!("{:?}", event);
-                }
+                let mut pb = NoProgressBar::default();
+                pb.render_progress(&download_rx);
             });
 
             apt.commit(
