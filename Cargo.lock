@@ -4067,9 +4067,9 @@ dependencies = [
 
 [[package]]
 name = "oma-fetch"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a83703c216bf8e6cce1eef09ab9a2cd10427805f8f0eb0db2ba6e057a5ba2c28"
+checksum = "cae92d99ece34d67b07970332580a73e13bdc6622127651ca9d6e9d42a600405"
 dependencies = [
  "async-compression",
  "bon",
@@ -4088,9 +4088,9 @@ dependencies = [
 
 [[package]]
 name = "oma-pm"
-version = "0.48.4"
+version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "910c28c4c911654bffac8521660b706cbbe06376fe9ec642fe63125d83755fb0"
+checksum = "194381e358bf43bb761e0b646df89b0ae2729601c9cd780b64bea2a9355574e2"
 dependencies = [
  "ahash",
  "apt-auth-config",
