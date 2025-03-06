@@ -421,7 +421,7 @@ fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
         .cache(&apt.cache)
         .build();
 
-    let pkgs = matcher.match_pkgs_and_versions_from_glob(arg)?;
+    let pkgs = matcher.match_local_glob(arg)?;
     apt.install(&pkgs, true)?;
 
     Ok(pkgs
