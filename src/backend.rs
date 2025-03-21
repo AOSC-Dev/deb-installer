@@ -204,7 +204,7 @@ impl Backend {
                 .cache(&apt.cache)
                 .build();
 
-            let pkgs = matcher.match_pkgs_and_versions_from_glob(&path)?;
+            let pkgs = matcher.match_local_glob(&path)?;
 
             apt.install(&pkgs, true)?;
             apt.resolve(true, false)?;
