@@ -14,14 +14,14 @@ use std::{
 use anyhow::{Context, Result};
 use backend::Backend;
 use clap::Parser;
-use human_bytes::human_bytes;
 use num_enum::IntoPrimitive;
 use oma_pm::{
     apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError, SummarySort},
     matches::PackagesMatcher,
     pkginfo::OmaPackage,
 };
-use slint::ComponentHandle;
+use oma_utils::human_bytes::HumanBytes;
+use slint::{ComponentHandle, ToSharedString};
 use tracing::{debug, error, level_filters::LevelFilter};
 use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 use zbus::{Connection, connection, proxy};
@@ -325,7 +325,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                     installer.set_package(info.package.to_string().into());
                     installer.set_description(info.short_description.into());
                     installer.set_version(info.version.to_string().into());
-                    installer.set_installed_size(human_bytes(info.install_size as f64).into());
+                    installer.set_installed_size(HumanBytes(info.install_size).to_shared_string());
 
                     let mut archs = apt.get_architectures();
 
