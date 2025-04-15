@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = { version = "1", features = ["backtrace"] }
 slint = { version = "1.10", features = ["gettext"] }
-oma-pm = "0.48"
+oma-pm = "0.50"
 oma-fetch = "0.28"
 reqwest = "0.12"
 tracing = "0.1"

@@ -63,32 +63,9 @@ enum Progress {
 
 fn u8_oma_pm_errors(error: &OmaAptError) -> u8 {
     match error {
-        OmaAptError::AptErrors(_) => 1,
-        OmaAptError::AptError(_) => 2,
-        OmaAptError::AptCxxException(_) => 3,
-        OmaAptError::OmaDatabaseError(_) => 4,
-        OmaAptError::MarkReinstallError(_, _) => 5,
         OmaAptError::DependencyIssue(_) => 6,
-        OmaAptError::PkgIsEssential(_) => 7,
-        OmaAptError::PkgNoCandidate(_) => 8,
-        OmaAptError::PkgNoChecksum(_) => 9,
-        OmaAptError::PkgUnavailable(_, _) => 10,
-        OmaAptError::InvalidFileName(_) => 11,
-        OmaAptError::FailedCreateAsyncRuntime(_) => 13,
-        OmaAptError::FailedOperateDirOrFile(_, _) => 14,
-        OmaAptError::FailedGetAvailableSpace(_) => 15,
-        OmaAptError::DpkgFailedConfigure(_) => 16,
         OmaAptError::DiskSpaceInsufficient(_, _) => 17,
-        OmaAptError::CommitErr(_) => 18,
-        OmaAptError::MarkPkgNotInstalled(_) => 19,
-        OmaAptError::DpkgError(_) => 20,
-        OmaAptError::FailedToDownload(_) => 21,
-        OmaAptError::FailedGetParentPath(_) => 22,
-        OmaAptError::FailedGetCanonicalize(_, _) => 23,
-        OmaAptError::PtrIsNone(_) => 24,
-        OmaAptError::ChecksumError(_) => 25,
-        OmaAptError::Features => 26,
-        OmaAptError::DpkgTriggers(_) => 27,
+        _ => 255,
     }
 }
 
