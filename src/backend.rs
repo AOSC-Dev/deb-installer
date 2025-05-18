@@ -14,9 +14,10 @@ use flume::unbounded;
 use oma_fetch::{Event, SingleDownloadError};
 use oma_pm::{
     CommitNetworkConfig,
-    apt::{AptConfig, OmaApt, OmaAptArgs, SummarySort},
+    apt::{AptConfig, OmaApt, OmaAptArgs},
     matches::PackagesMatcher,
     progress::InstallProgressManager,
+    sort::SummarySort,
 };
 use oma_utils::human_bytes::HumanBytes;
 use reqwest::ClientBuilder;
@@ -210,7 +211,7 @@ impl Backend {
             apt.resolve(true, false)?;
 
             let client = ClientBuilder::new().user_agent("oma/1.14.514").build()?;
-            let op = apt.summary(SummarySort::NoSort, |_| false, |_| false)?;
+            let op = apt.summary(SummarySort::default(), |_| false, |_| false)?;
 
             let (download_tx, download_rx) = unbounded();
 

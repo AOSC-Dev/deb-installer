@@ -1,8 +1,8 @@
 use std::{
     env::current_exe,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, PipeReader},
     path::PathBuf,
-    process::{self, Child, Command, Stdio, exit},
+    process::{self, Child, Command, exit},
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -16,9 +16,10 @@ use backend::Backend;
 use clap::Parser;
 use num_enum::IntoPrimitive;
 use oma_pm::{
-    apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError, SummarySort},
+    apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError},
     matches::PackagesMatcher,
     pkginfo::OmaPackage,
+    sort::SummarySort,
 };
 use oma_utils::human_bytes::HumanBytes;
 use slint::{ComponentHandle, ToSharedString};
@@ -276,7 +277,7 @@ fn set_info(arg: &str, installer: &DebInstaller) {
                 let info = oma_pkg.pkg_info(&apt.cache);
 
                 if let Err(e) = apt
-                    .summary(SummarySort::NoSort, |_| false, |_| false)
+                    .summary(SummarySort::default(), |_| false, |_| false)
                     .and_then(|summary| apt.check_disk_size(&summary))
                 {
                     let err_num = u8_oma_pm_errors(&e);
@@ -408,60 +409,38 @@ fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
 }
 
 fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {
-    let t = thread::spawn(move || -> Result<()> {
+    thread::spawn(move || -> Result<()> {
         let txc = tx.clone();
         let txc2 = tx.clone();
-        let txc3 = tx.clone();
 
-        let mut backend_child = start_backend()?;
-        let stdout = backend_child.stdout.take();
-        let stderr = backend_child.stderr.take();
+        let (mut backend_child, reader) = start_backend()?;
 
-        thread::spawn(move || {
-            if let Some(out) = stdout {
-                let reader = BufReader::new(out);
-                reader.lines().for_each(|line| match line {
-                    Ok(line) => {
-                        if let Err(e) = txc.send(Progress::Message(
-                            console::strip_ansi_codes(&line).to_string(),
-                        )) {
-                            error!("{e}");
-                        }
-                    }
-                    Err(e) => {
-                        error!("{e}")
-                    }
-                });
-            }
-        });
+        let reader = BufReader::new(reader);
 
         thread::spawn(move || {
-            if let Some(out) = stderr {
-                let reader = BufReader::new(out);
-                reader.lines().for_each(|line| match line {
-                    Ok(line) => {
-                        if let Err(e) = txc2.send(Progress::Message(line)) {
-                            error!("{e}");
-                        }
+            reader.lines().for_each(|line| match line {
+                Ok(line) => {
+                    if let Err(e) = txc.send(Progress::Message(
+                        console::strip_ansi_codes(&line).to_string(),
+                    )) {
+                        error!("{e}");
                     }
-                    Err(e) => {
-                        error!("{e}")
-                    }
-                });
-            }
+                }
+                Err(e) => {
+                    error!("{e}")
+                }
+            });
         });
 
         thread::spawn(move || {
             let _wait = backend_child.wait();
-            if let Err(e) = txc3.send(Progress::Done) {
+            if let Err(e) = txc2.send(Progress::Done) {
                 error!("{e}");
             }
         });
 
         on_install_inner(argc, tx)
-    });
-
-    t
+    })
 }
 
 #[tokio::main]
@@ -498,15 +477,17 @@ async fn on_install_inner(argc: String, tx: flume::Sender<Progress>) -> Result<(
     }
 }
 
-fn start_backend() -> Result<Child> {
+fn start_backend() -> Result<(Child, PipeReader)> {
+    let (recv, send) = std::io::pipe()?;
+
     let child = Command::new("pkexec")
         .arg(std::env::current_exe()?)
         .arg("--backend")
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stdout(send.try_clone()?)
+        .stderr(send)
         .spawn()?;
 
-    Ok(child)
+    Ok((child, recv))
 }
 
 fn start_kde_debconf() -> Result<Child> {
