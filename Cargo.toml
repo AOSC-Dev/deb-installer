@@ -6,8 +6,8 @@ edition = "2024"
 [dependencies]
 anyhow = { version = "1", features = ["backtrace"] }
 slint = { version = "1.11", features = ["gettext"] }
-oma-pm = "0.52"
-oma-fetch = "0.30"
+oma-pm = "0.53"
+oma-fetch = "0.31"
 reqwest = "0.12"
 tracing = "0.1"
 zbus = { version = "5",  features = ["tokio"] }
@@ -15,8 +15,8 @@ tokio = { version = "1.41", features = ["rt", "rt-multi-thread", "macros"] }
 clap = { version = "4", features = ["derive"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 flume = "0.11.1"
-console = "0.15"
-which = "7"
+console = "0.16"
+which = "8"
 num_enum = "0.7.3"
 oma-utils = { version = "0.11", features = ["human-bytes"] }
 

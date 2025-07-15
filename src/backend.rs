@@ -230,6 +230,7 @@ impl Backend {
                     auth_config: None,
                     network_thread: None,
                 },
+                None,
                 |event| async {
                     if let Err(e) = download_tx.send_async(event).await {
                         debug!("Send progress channel got error: {}; maybe check archive work still in progress", e);
