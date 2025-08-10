@@ -14,7 +14,7 @@ use flume::unbounded;
 use oma_fetch::{Event, SingleDownloadError};
 use oma_pm::{
     CommitNetworkConfig,
-    apt::{AptConfig, OmaApt, OmaAptArgs},
+    apt::{AptConfig, InstallProgressOpt::TermLike, OmaApt, OmaAptArgs},
     matches::PackagesMatcher,
     progress::InstallProgressManager,
     sort::SummarySort,
@@ -221,9 +221,9 @@ impl Backend {
             });
 
             apt.commit(
-                Box::new(DebInstallerInstallProgressManager {
+                TermLike(Box::new(DebInstallerInstallProgressManager {
                     progress: install_pm_clone.clone(),
-                }),
+                })),
                 &op,
                 &client,
                 CommitNetworkConfig {
