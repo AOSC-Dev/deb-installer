@@ -18,7 +18,7 @@ export component DebInstaller inherits Window {
     in-out property <int> action;
     in-out property <int> err-num;
     in-out property <string> err;
-    in-out property <string> status: err-num == 0 ? @tr("OK to install") : err-num == 6 ? @tr("Dependencies unmet") : err-num == 100 ? @tr("Architecture not match") : err-num == 17 ? @tr("Insufficient disk space") : err;
+    in-out property <string> status: err-num == 0 ? @tr("OK to install") : err-num == 6 ? @tr("Dependencies unmet") : err-num == 100 ? @tr("Architecture not match") : err-num == 17 ? @tr("Insufficient disk space") : err-num == 101 ? @tr("Another deb-installer instance is running") : err;
     private property <string> install-button-name: root.action == 0 ? @tr("Install") : root.action == 1 ? @tr("Reinstall") : root.action == 2 ? @tr("Upgrade") : root.action == 3 ? @tr("Downgrade") : @tr("Install");
 
     callback install();
