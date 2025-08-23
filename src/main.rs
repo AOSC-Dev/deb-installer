@@ -1,7 +1,8 @@
 use std::{
     env::current_exe,
+    fs::{self, remove_file},
     io::{BufRead, BufReader, PipeReader},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{self, Child, Command, exit},
     sync::{
         Arc,
@@ -11,7 +12,7 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use backend::Backend;
 use clap::Parser;
 use num_enum::IntoPrimitive;
@@ -28,6 +29,8 @@ use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::Subs
 use zbus::{Connection, connection, proxy};
 
 use crate::deb_installer::DebInstaller;
+
+const LOCK: &str = "/run/lock/deb-installer";
 
 mod backend;
 mod deb_installer;
@@ -168,6 +171,11 @@ fn ui(pkg: PathBuf) {
     let installer = DebInstaller::new().unwrap();
 
     set_info(&arg, &installer);
+
+    if Path::new(LOCK).exists() {
+        installer.set_can_install(false);
+        installer.set_err_num(101);
+    }
 
     let argc = arg.to_string();
 
@@ -420,11 +428,11 @@ fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()
         thread::spawn(move || {
             reader.lines().for_each(|line| match line {
                 Ok(line) => {
-                    if let Err(e) = txc.send(Progress::Message(
+                    txc.send(Progress::Message(
                         console::strip_ansi_codes(&line).to_string(),
-                    )) {
-                        error!("{e}");
-                    }
+                    ))
+                    .inspect_err(|e| error!("{e}"))
+                    .ok();
                 }
                 Err(e) => {
                     error!("{e}")
@@ -496,6 +504,14 @@ fn start_kde_debconf() -> Result<Child> {
 
 #[tokio::main]
 async fn run_backend() -> Result<()> {
+    let lock = Path::new(LOCK);
+
+    if lock.exists() {
+        bail!("Another instance is running");
+    }
+
+    fs::File::create(lock)?;
+
     let backend = Backend::default();
 
     let exit = backend.exit.clone();
@@ -511,6 +527,7 @@ async fn run_backend() -> Result<()> {
     loop {
         if exit.load(Ordering::Relaxed) {
             debug!("Bye.");
+            remove_file(lock)?;
             return Ok(());
         }
 

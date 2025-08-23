@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2024-11-14 09:11+0000\n"
+"POT-Creation-Date: 2025-08-23 14:40+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -37,6 +37,11 @@ msgctxt "DebInstaller"
 msgid "Insufficient disk space"
 msgstr ""
 
+#: src/deb_installer.slint:21
+msgctxt "DebInstaller"
+msgid "Another deb-installer instance is running"
+msgstr ""
+
 #: src/deb_installer.slint:22 src/deb_installer.slint:22
 msgctxt "DebInstaller"
 msgid "Install"
@@ -57,7 +62,7 @@ msgctxt "DebInstaller"
 msgid "Downgrade"
 msgstr ""
 
-#: src/deb_installer.slint:106
+#: src/deb_installer.slint:109
 msgctxt "DebInstaller"
 msgid ""
 "Welcome to the software package installation wizard.\n"
@@ -70,17 +75,17 @@ msgid ""
 "administrative password."
 msgstr ""
 
-#: src/deb_installer.slint:129
+#: src/deb_installer.slint:132
 msgctxt "DebInstaller"
 msgid "Cancel"
 msgstr ""
 
-#: src/deb_installer.slint:147
+#: src/deb_installer.slint:150
 msgctxt "DebInstaller"
 msgid "Preparing for installation, please wait ..."
 msgstr ""
 
-#: src/deb_installer.slint:171
+#: src/deb_installer.slint:174
 msgctxt "DebInstaller"
 msgid "Finish"
 msgstr ""
