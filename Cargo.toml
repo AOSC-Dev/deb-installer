@@ -6,8 +6,8 @@ edition = "2024"
 [dependencies]
 anyhow = { version = "1", features = ["backtrace"] }
 slint = { version = "1.11", features = ["gettext"] }
-oma-pm = "0.55"
-oma-fetch = "0.31"
+oma-pm = "0.56"
+oma-fetch = "0.33"
 reqwest = "0.12"
 tracing = "0.1"
 zbus = { version = "5",  features = ["tokio"] }
@@ -18,7 +18,7 @@ flume = "0.11.1"
 console = "0.16"
 which = "8"
 num_enum = "0.7.3"
-oma-utils = { version = "0.11", features = ["human-bytes"] }
+oma-utils = { version = "0.12", features = ["human-bytes"] }
 
 [features]
 debug = []
