@@ -498,7 +498,7 @@ fn start_kde_debconf() -> Result<Child> {
 #[tokio::main]
 async fn run_backend() -> Result<()> {
     let lock_path = Path::new("/run/lock/deb-installer");
-    create_dir_all(lock_path).await?;
+    create_dir_all(lock_path.parent().unwrap()).await?;
     let _lock = oma_utils::get_file_lock(lock_path)?;
 
     let backend = Backend::default();
