@@ -11,16 +11,12 @@ use std::{
 
 use anyhow::Chain;
 use flume::unbounded;
-use oma_fetch::{Event, SingleDownloadError};
+use oma_fetch::{SingleDownloadError};
 use oma_pm::{
-    CommitNetworkConfig,
-    apt::{AptConfig, InstallProgressOpt::TermLike, OmaApt, OmaAptArgs},
-    matches::PackagesMatcher,
-    progress::InstallProgressManager,
-    sort::SummarySort,
+    CommitConfig, PackageDownloadEvent, apt::{AptConfig, InstallProgressOpt::TermLike, OmaApt, OmaAptArgs}, matches::PackagesMatcher, progress::InstallProgressManager, sort::SummarySort
 };
 use oma_utils::human_bytes::HumanBytes;
-use reqwest::ClientBuilder;
+use oma_fetch::reqwest::ClientBuilder;
 use tracing::{debug, error, info};
 use zbus::interface;
 
@@ -45,7 +41,7 @@ struct DebInstallerInstallProgressManager {
 }
 
 pub trait RenderPackagesDownloadProgress {
-    fn render_progress(&mut self, rx: &flume::Receiver<Event>);
+    fn render_progress(&mut self, rx: &flume::Receiver<PackageDownloadEvent>);
 }
 
 impl Default for NoProgressBar {
@@ -67,7 +63,7 @@ pub struct NoProgressBar {
 }
 
 impl RenderPackagesDownloadProgress for NoProgressBar {
-    fn render_progress(&mut self, rx: &flume::Receiver<Event>) {
+    fn render_progress(&mut self, rx: &flume::Receiver<PackageDownloadEvent>) {
         while let Ok(event) = rx.recv() {
             if self.download_event(event) {
                 break;
@@ -77,9 +73,9 @@ impl RenderPackagesDownloadProgress for NoProgressBar {
 }
 
 impl NoProgressBar {
-    fn download_event(&mut self, event: Event) -> bool {
+    fn download_event(&mut self, event: PackageDownloadEvent) -> bool {
         match event {
-            Event::ChecksumMismatch {
+            PackageDownloadEvent::ChecksumMismatch {
                 index: _,
                 filename,
                 times,
@@ -89,15 +85,15 @@ impl NoProgressBar {
                     filename, times
                 );
             }
-            Event::GlobalProgressAdd(inc) => {
+            PackageDownloadEvent::GlobalProgressAdd(inc) => {
                 self.progress += inc;
                 self.print_progress();
             }
-            Event::GlobalProgressSub(num) => {
+            PackageDownloadEvent::GlobalProgressSub(num) => {
                 self.progress = self.progress.saturating_sub(num);
                 self.print_progress();
             }
-            Event::NextUrl {
+            PackageDownloadEvent::NextUrl {
                 index: _,
                 file_name,
                 err,
@@ -105,14 +101,14 @@ impl NoProgressBar {
                 handle_no_pb_download_error(file_name, err);
                 info!("Retrying using the next available mirror ...");
             }
-            Event::DownloadDone { index: _, msg } => {
+            PackageDownloadEvent::DownloadDone { index: _, msg } => {
                 info!("Done: {msg}");
             }
-            Event::AllDone => return true,
-            Event::NewGlobalProgressBar(total_size) => {
+            PackageDownloadEvent::AllDone => return true,
+            PackageDownloadEvent::NewGlobalProgressBar(total_size) => {
                 self.total_size.get_or_init(|| total_size);
             }
-            Event::Failed { file_name, error } => {
+            PackageDownloadEvent::Failed { file_name, error } => {
                 handle_no_pb_download_error(file_name, error);
             }
             _ => {}
@@ -226,9 +222,10 @@ impl Backend {
                 })),
                 &op,
                 &client,
-                CommitNetworkConfig {
+                CommitConfig {
                     auth_config: None,
                     network_thread: None,
+                    download_only: false,
                 },
                 None,
                 |event| async {

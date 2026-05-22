@@ -67,7 +67,7 @@ enum Progress {
 
 fn u8_oma_pm_errors(error: &OmaAptError) -> u8 {
     match error {
-        OmaAptError::DependencyIssue(_) => 6,
+        OmaAptError::DependencyIssue { .. } => 6,
         OmaAptError::DiskSpaceInsufficient(_, _) => 17,
         _ => 255,
     }
@@ -515,6 +515,10 @@ async fn run_backend() -> Result<()> {
     let backend = Backend::default();
 
     let exit = backend.exit.clone();
+
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
 
     let _conn = connection::Builder::system()?
         .name("io.aosc.DebInstaller")?
