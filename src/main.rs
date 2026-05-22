@@ -39,7 +39,7 @@ mod deb_installer;
 #[clap(about, version, author)]
 struct Args {
     package: Option<PathBuf>,
-    #[clap(long)]
+    #[clap(long, hide = true)]
     backend: bool,
     #[clap(long, short)]
     debug: bool,
