@@ -6,17 +6,22 @@ use std::{
         atomic::{AtomicBool, AtomicU32, Ordering},
     },
     thread::{self, JoinHandle},
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use anyhow::Chain;
 use flume::unbounded;
-use oma_fetch::{SingleDownloadError};
+use oma_fetch::SingleDownloadError;
+use oma_fetch::reqwest::ClientBuilder;
+use oma_history::HistoryInfo;
 use oma_pm::{
-    CommitConfig, PackageDownloadEvent, apt::{AptConfig, InstallProgressOpt::TermLike, OmaApt, OmaAptArgs}, matches::PackagesMatcher, progress::InstallProgressManager, sort::SummarySort
+    CommitConfig, PackageDownloadEvent,
+    apt::{AptConfig, InstallProgressOpt::TermLike, OmaApt, OmaAptArgs},
+    matches::PackagesMatcher,
+    progress::InstallProgressManager,
+    sort::SummarySort,
 };
 use oma_utils::human_bytes::HumanBytes;
-use oma_fetch::reqwest::ClientBuilder;
 use tracing::{debug, error, info};
 use zbus::interface;
 
@@ -216,7 +221,9 @@ impl Backend {
                 pb.render_progress(&download_rx);
             });
 
-            apt.commit(
+            let start_time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
+
+            let result = apt.commit(
                 TermLike(Box::new(DebInstallerInstallProgressManager {
                     progress: install_pm_clone.clone(),
                 })),
@@ -233,7 +240,22 @@ impl Backend {
                         debug!("Send progress channel got error: {}; maybe check archive work still in progress", e);
                     }
                 },
-            )?;
+            );
+
+            #[cfg(feature = "aosc")]
+            {
+                let mut history = oma_history::History::new("/var/lib/oma/history.db", true, false)?;
+
+                history.write(HistoryInfo {
+                    summary: &op,
+                    start_time,
+                    success: result.is_ok(),
+                    is_fix_broken: false,
+                    is_undo: false,
+                    topics_enabled: Vec::new(),
+                    topics_disabled: Vec::new(),
+                })?;
+            }
 
             install_pm_clone.store(100, Ordering::SeqCst);
 
