@@ -1,6 +1,5 @@
 use std::{
     env::current_exe,
-    fs::{self, remove_file},
     io::{BufRead, BufReader, PipeReader},
     path::{Path, PathBuf},
     process::{self, Child, Command, exit},
@@ -12,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use backend::Backend;
 use clap::Parser;
 use num_enum::IntoPrimitive;
@@ -24,13 +23,12 @@ use oma_pm::{
 };
 use oma_utils::human_bytes::HumanBytes;
 use slint::{ComponentHandle, ToSharedString};
+use tokio::fs::create_dir_all;
 use tracing::{debug, error, level_filters::LevelFilter};
 use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 use zbus::{Connection, connection, proxy};
 
 use crate::deb_installer::DebInstaller;
-
-const LOCK: &str = "/run/lock/deb-installer";
 
 mod backend;
 mod deb_installer;
@@ -171,11 +169,6 @@ fn ui(pkg: PathBuf) {
     let installer = DebInstaller::new().unwrap();
 
     set_info(&arg, &installer);
-
-    if Path::new(LOCK).exists() {
-        installer.set_can_install(false);
-        installer.set_err_num(101);
-    }
 
     let argc = arg.to_string();
 
@@ -504,13 +497,9 @@ fn start_kde_debconf() -> Result<Child> {
 
 #[tokio::main]
 async fn run_backend() -> Result<()> {
-    let lock = Path::new(LOCK);
-
-    if lock.exists() {
-        bail!("Another instance is running");
-    }
-
-    fs::File::create(lock)?;
+    let lock_path = Path::new("/run/lock/deb-installer");
+    create_dir_all(lock_path).await?;
+    let _lock = oma_utils::get_file_lock(lock_path)?;
 
     let backend = Backend::default();
 
@@ -531,7 +520,6 @@ async fn run_backend() -> Result<()> {
     loop {
         if exit.load(Ordering::Relaxed) {
             debug!("Bye.");
-            remove_file(lock)?;
             return Ok(());
         }
 
