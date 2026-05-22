@@ -1,3 +1,4 @@
+use cxx_qt_build::{CxxQtBuilder, QmlModule};
 use std::{
     env,
     error::Error,
@@ -7,6 +8,15 @@ use std::{
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
+    CxxQtBuilder::new_qml_module(
+        QmlModule::new("io.aosc.DebInstaller")
+            .version(1, 0)
+            .qml_file("src/main.qml"),
+    )
+    .file("src/cxx_qt_bridge.rs")
+    .qrc_resources(["data/io.aosc.deb_installer.svg"])
+    .build();
+
     if env::var("GEN_GETTEXT").is_err() {
         return Ok(());
     }

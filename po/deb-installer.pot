@@ -1,92 +1,117 @@
-
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2025-08-23 14:40+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-10 21:02+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: \n"
-"Plural-Forms: nplurals=1; plural=0;\n"
 
-#: src/deb_installer.slint:4
-msgctxt "DebInstaller"
-msgid "Package Installation Wizard"
-msgstr ""
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "OK to install"
-msgstr ""
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "Dependencies unmet"
-msgstr ""
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "Architecture not match"
-msgstr ""
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "Insufficient disk space"
-msgstr ""
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "Another deb-installer instance is running"
-msgstr ""
-
-#: src/deb_installer.slint:22 src/deb_installer.slint:22
-msgctxt "DebInstaller"
+#: src/main.qml:16 src/main.qml:24
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:16
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:24
 msgid "Install"
 msgstr ""
 
-#: src/deb_installer.slint:22
-msgctxt "DebInstaller"
-msgid "Reinstall"
-msgstr ""
-
-#: src/deb_installer.slint:22
-msgctxt "DebInstaller"
+#: src/main.qml:18
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:18
 msgid "Upgrade"
 msgstr ""
 
-#: src/deb_installer.slint:22
-msgctxt "DebInstaller"
+#: src/main.qml:20
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:20
+msgid "Reinstall"
+msgstr ""
+
+#: src/main.qml:22
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:22
 msgid "Downgrade"
 msgstr ""
 
-#: src/deb_installer.slint:109
-msgctxt "DebInstaller"
-msgid ""
-"Welcome to the software package installation wizard.\n"
-"\n"
-"Please note that many 3rd-party software packages are not tested nor "
-"verified by your distribution maintainers (they may not function as "
-"expected, or may contain malicious content).\n"
-"\n"
-"To install the package, press \"{}\" below and you will be prompted for "
-"administrative password."
+#: src/main.qml:37
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:37
+msgid "Package Installation Wizard"
 msgstr ""
 
-#: src/deb_installer.slint:132
-msgctxt "DebInstaller"
-msgid "Cancel"
+#: src/main.qml:57 src/main.qml:70
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:57
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:70
+msgid "Welcome"
 msgstr ""
 
-#: src/deb_installer.slint:150
-msgctxt "DebInstaller"
-msgid "Preparing for installation, please wait ..."
+#: src/main.qml:60
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:60
+msgid "Installing…"
 msgstr ""
 
-#: src/deb_installer.slint:174
-msgctxt "DebInstaller"
+#: src/main.qml:64
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:64
+msgid "Installation Failed!"
+msgstr ""
+
+#: src/main.qml:66 src/main.qml:95
+msgid "Installation Sucessful!"
+msgstr ""
+
+#: src/main.qml:84
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:84
+msgid "View Log"
+msgstr ""
+
+#: src/main.qml:90
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:90
+msgid "Installation Log"
+msgstr ""
+
+#: src/main.qml:103
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:103
 msgid "Finish"
 msgstr ""
 
+#: src/main.qml:103
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:103
+msgid "Cancel"
+msgstr ""
+
+#: src/main.qml:120
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:120
+msgid ""
+"Please note that many 3rd-party software packages are not tested nor "
+"verified (they may not function as expected, or may contain malicious "
+"content)."
+msgstr ""
+
+#: src/main.qml:243
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:243
+msgid "OK to install"
+msgstr ""
+
+#: src/main.qml:246
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:246
+msgid "Dependencies unmet"
+msgstr ""
+
+#: src/main.qml:249
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:249
+msgid "Insufficient disk space"
+msgstr ""
+
+#: src/main.qml:252
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:252
+msgid "Unknown status or error"
+msgstr ""
+
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:66
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:95
+msgid "Installation sucessful!"
+msgstr ""
