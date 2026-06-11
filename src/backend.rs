@@ -244,7 +244,8 @@ impl Backend {
 
             #[cfg(feature = "aosc")]
             {
-                let mut history = oma_history::History::new("/var/lib/oma/history.db", true, false)?;
+                let mut history =
+                    oma_history::History::new("/var/lib/oma/history.db", true, false)?;
 
                 history.write(HistoryInfo {
                     summary: &op,
