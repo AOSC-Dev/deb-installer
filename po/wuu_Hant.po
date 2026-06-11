@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-10 21:02+0800\n"
-"PO-Revision-Date: 2026-06-11 16:33+0800\n"
+"PO-Revision-Date: 2026-06-11 18:24+0800\n"
 "Last-Translator: Kaiyang Wu <origincode@aosc.io>\n"
 "Language-Team: Wu (Traditional Han script) <https://weblate.aosc.io/projects/"
 "deb-installer/deb-installer/wuu_Hant/>\n"
@@ -17,31 +17,26 @@ msgstr ""
 #: src/main.qml:16 src/main.qml:24
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:16
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:24
-#, fuzzy
 msgid "Install"
 msgstr "安裝"
 
 #: src/main.qml:18
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:18
-#, fuzzy
 msgid "Upgrade"
 msgstr "更新"
 
 #: src/main.qml:20
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:20
-#, fuzzy
 msgid "Reinstall"
 msgstr "重新安裝"
 
 #: src/main.qml:22
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:22
-#, fuzzy
 msgid "Downgrade"
 msgstr "降級"
 
 #: src/main.qml:37
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:37
-#, fuzzy
 msgid "Package Installation Wizard"
 msgstr "軟件包安裝嚮導"
 
@@ -77,13 +72,11 @@ msgstr "安裝日誌"
 
 #: src/main.qml:103
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:103
-#, fuzzy
 msgid "Finish"
 msgstr "完成"
 
 #: src/main.qml:103
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:103
-#, fuzzy
 msgid "Cancel"
 msgstr "取消"
 
@@ -99,19 +92,16 @@ msgstr ""
 
 #: src/main.qml:243
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:243
-#, fuzzy
 msgid "OK to install"
 msgstr "可以安裝"
 
 #: src/main.qml:246
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:246
-#, fuzzy
 msgid "Dependencies unmet"
 msgstr "依賴弗滿足"
 
 #: src/main.qml:249
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:249
-#, fuzzy
 msgid "Insufficient disk space"
 msgstr "硬盤空間弗夠"
 
