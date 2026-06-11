@@ -1,8 +1,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2025-08-23 14:40+0000\n"
-"PO-Revision-Date: 2025-08-23 22:41+0800\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-10 21:02+0800\n"
+"PO-Revision-Date: 2026-06-10 21:25+0800\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: zh_CN\n"
@@ -10,91 +11,120 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 3.4.1\n"
+"X-Generator: Poedit 3.9\n"
 
-#: src/deb_installer.slint:4
-msgctxt "DebInstaller"
-msgid "Package Installation Wizard"
-msgstr "软件包安装向导"
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "OK to install"
-msgstr "可安装"
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "Dependencies unmet"
-msgstr "依赖未满足"
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "Architecture not match"
-msgstr "架构不匹配"
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "Insufficient disk space"
-msgstr "磁盘空间不足"
-
-#: src/deb_installer.slint:21
-msgctxt "DebInstaller"
-msgid "Another deb-installer instance is running"
-msgstr "已有另一个正在运行的 deb-installer 实例"
-
-#: src/deb_installer.slint:22
-msgctxt "DebInstaller"
+#: src/main.qml:16 src/main.qml:24
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:16
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:24
 msgid "Install"
 msgstr "安装"
 
-#: src/deb_installer.slint:22
-msgctxt "DebInstaller"
-msgid "Reinstall"
-msgstr "重装"
-
-#: src/deb_installer.slint:22
-msgctxt "DebInstaller"
+#: src/main.qml:18
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:18
 msgid "Upgrade"
 msgstr "升级"
 
-#: src/deb_installer.slint:22
-msgctxt "DebInstaller"
+#: src/main.qml:20
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:20
+msgid "Reinstall"
+msgstr "重装"
+
+#: src/main.qml:22
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:22
 msgid "Downgrade"
 msgstr "降级"
 
-#: src/deb_installer.slint:109
-msgctxt "DebInstaller"
-msgid ""
-"Welcome to the software package installation wizard.\n"
-"\n"
-"Please note that many 3rd-party software packages are not tested nor "
-"verified by your distribution maintainers (they may not function as "
-"expected, or may contain malicious content).\n"
-"\n"
-"To install the package, press \"{}\" below and you will be prompted for "
-"administrative password."
-msgstr ""
-"欢迎使用软件包安装向导。\n"
-"\n"
-"请注意：许多第三方软件包尚未经过维护者测试或验证，其功能可能不完美，甚至"
-"包含恶意内容。\n"
-"\n"
-"要继续安装，请点击下方“{}”按钮（本向导将提示您输入管理员密码）。"
+#: src/main.qml:37
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:37
+msgid "Package Installation Wizard"
+msgstr "软件包安装向导"
 
-#: src/deb_installer.slint:132
-msgctxt "DebInstaller"
+#: src/main.qml:57 src/main.qml:70
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:57
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:70
+msgid "Welcome"
+msgstr "欢迎"
+
+#: src/main.qml:60
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:60
+msgid "Installing…"
+msgstr "正在安装…"
+
+#: src/main.qml:64
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:64
+msgid "Installation Failed!"
+msgstr "安装失败！"
+
+#: src/main.qml:66 src/main.qml:95
+msgid "Installation Sucessful!"
+msgstr "安装成功！"
+
+#: src/main.qml:84
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:84
+msgid "View Log"
+msgstr "查看日志"
+
+#: src/main.qml:90
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:90
+msgid "Installation Log"
+msgstr "安装日志"
+
+#: src/main.qml:103
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:103
+msgid "Finish"
+msgstr "完成"
+
+#: src/main.qml:103
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:103
 msgid "Cancel"
 msgstr "取消"
 
-#: src/deb_installer.slint:150
-msgctxt "DebInstaller"
-msgid "Preparing for installation, please wait ..."
-msgstr "正在准备安装，请稍候 ..."
+#: src/main.qml:120
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:120
+msgid ""
+"Please note that many 3rd-party software packages are not tested nor "
+"verified (they may not function as expected, or may contain malicious "
+"content)."
+msgstr ""
+"请注意：许多第三方软件包未经过维护者测试或验证，其功能可能不完美，甚至"
+"包含恶意内容。"
 
-#: src/deb_installer.slint:174
-msgctxt "DebInstaller"
-msgid "Finish"
-msgstr "完成"
+#: src/main.qml:243
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:243
+msgid "OK to install"
+msgstr "可安装"
+
+#: src/main.qml:246
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:246
+msgid "Dependencies unmet"
+msgstr "依赖未满足"
+
+#: src/main.qml:249
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:249
+msgid "Insufficient disk space"
+msgstr "磁盘空间不足"
+
+#: src/main.qml:252
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:252
+msgid "Unknown status or error"
+msgstr "未知状态或错误"
+
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:66
+#: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:95
+msgid "Installation sucessful!"
+msgstr "安装成功！"
+
+#~ msgctxt "DebInstaller"
+#~ msgid "Architecture not match"
+#~ msgstr "架构不匹配"
+
+#~ msgctxt "DebInstaller"
+#~ msgid "Another deb-installer instance is running"
+#~ msgstr "已有另一个正在运行的 deb-installer 实例"
+
+#~ msgctxt "DebInstaller"
+#~ msgid "Preparing for installation, please wait ..."
+#~ msgstr "正在准备安装，请稍候 ..."
 
 #~ msgctxt "DebInstaller"
 #~ msgid "deb-installer session exist"

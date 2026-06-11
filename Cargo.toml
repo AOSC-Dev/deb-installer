@@ -5,8 +5,6 @@ edition = "2024"
 
 [dependencies]
 anyhow = { version = "1.0.102", features = ["backtrace"] }
-# FIXME: there is no reactor running, must be called from the context of a Tokio 1.x runtime
-slint = { version = "=1.15", features = ["gettext"] }
 oma-pm = { version = "0.63.0", default-features = false }
 oma-fetch = "0.37"
 tracing = "0.1.44"
@@ -24,6 +22,13 @@ rustls = { version = "0.23", default-features = false, features = [
     "tls12",
 ] }
 oma-history = { version = "0.10.0", optional = true }
+cxx-qt = "0.8" 
+cxx = "1.0.194"
+cxx-qt-lib = { version = "0.8", features = ["qt_full"] }
+gettext-rs = "0.7.7"
+
+[build-dependencies]
+cxx-qt-build = "0.8.1"
 
 [features]
 debug = []

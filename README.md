@@ -9,7 +9,7 @@ Dependencies
 ---
 
 - Rust (`rustc`) that is reasonably new
-- Qt 5
+- Qt 5 or Qt 6, along with the corresponding Kirigami and QQC2-Desktop-Style components
 - OpenSSL
 - libapt-pkg
 
@@ -42,7 +42,7 @@ install -Dvm644 ./data/io.aosc.deb_installer.conf \
     /usr/share/dbus-1/system.d/io.aosc.deb_installer.conf
 
 # Install the icon and .desktop entry.
-install -Dvm644 ./data/io.aosc.deb_installer.{png,svg} \
+install -Dvm644 ./data/io.aosc.deb_installer.svg \
     -t /usr/share/pixmaps/
 install -Dvm644 ./data/io.aosc.deb_installer.desktop \
     /usr/share/applications/io.aosc.deb_installer.desktop

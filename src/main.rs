@@ -1,12 +1,9 @@
 use std::{
-    env::current_exe,
+    env::{self, current_exe},
     io::{BufRead, BufReader, PipeReader},
     path::{Path, PathBuf},
-    process::{self, Child, Command, exit},
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
+    process::{Child, Command, exit},
+    sync::{OnceLock, atomic::Ordering},
     thread::{self, JoinHandle},
     time::Duration,
 };
@@ -14,24 +11,19 @@ use std::{
 use anyhow::{Context, Result};
 use backend::Backend;
 use clap::Parser;
-use num_enum::IntoPrimitive;
-use oma_pm::{
-    apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError},
-    matches::PackagesMatcher,
-    pkginfo::OmaPackage,
-    sort::SummarySort,
-};
-use oma_utils::human_bytes::HumanBytes;
-use slint::{ComponentHandle, ToSharedString};
+use gettextrs::{bind_textdomain_codeset, bindtextdomain, textdomain};
+use oma_pm::{apt::OmaApt, matches::PackagesMatcher, pkginfo::OmaPackage};
 use tokio::fs::create_dir_all;
 use tracing::{debug, error, level_filters::LevelFilter};
 use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 use zbus::{Connection, connection, proxy};
 
-use crate::deb_installer::DebInstaller;
+use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QQuickStyle, QString, QUrl};
 
 mod backend;
-mod deb_installer;
+mod cxx_qt_bridge;
+
+static PKG_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
@@ -57,27 +49,15 @@ trait OmaClient {
     async fn exit(&self) -> zbus::Result<bool>;
 }
 
-enum Progress {
+#[derive(Debug)]
+pub enum Progress {
     Percent(u32),
     Message(String),
     Done,
-}
-
-fn u8_oma_pm_errors(error: &OmaAptError) -> u8 {
-    match error {
-        OmaAptError::DependencyIssue { .. } => 6,
-        OmaAptError::DiskSpaceInsufficient(_, _) => 17,
-        _ => 255,
-    }
+    Err(String),
 }
 
 fn main() {
-    #[cfg(feature = "debug")]
-    slint::init_translations!(concat!(env!("CARGO_MANIFEST_DIR"), "/mo/"));
-
-    #[cfg(not(feature = "debug"))]
-    slint::init_translations!("/usr/share/locale");
-
     let Args {
         package,
         backend,
@@ -86,7 +66,6 @@ fn main() {
 
     if !debug {
         let no_i18n_embd_info: EnvFilter = "i18n_embed=off,info".parse().unwrap();
-
         tracing_subscriber::registry()
             .with(
                 fmt::layer()
@@ -96,7 +75,6 @@ fn main() {
             .init();
     } else {
         let env_log = EnvFilter::try_from_default_env();
-
         if let Ok(filter) = env_log {
             tracing_subscriber::registry()
                 .with(
@@ -127,7 +105,7 @@ fn main() {
 
     if let Some(package) = package {
         if !package.exists() {
-            eprintln!("Package path does not exist");
+            eprintln!("Package does not exist at the specified path.");
             exit(1);
         }
 
@@ -139,7 +117,9 @@ fn main() {
             exit(1);
         }
 
-        ui(package.canonicalize().unwrap());
+        PKG_PATH.set(package).unwrap();
+
+        ui();
     } else if backend {
         if let Err(e) = run_backend() {
             error!("{e}");
@@ -154,245 +134,43 @@ fn main() {
     }
 }
 
-fn ui(pkg: PathBuf) {
-    let arg = pkg.display().to_string();
+fn ui() {
+    #[cfg(debug_assertions)]
+    bindtextdomain("deb-installer", "./mo").unwrap();
+
+    #[cfg(not(debug_assertions))]
+    bindtextdomain("deb-installer", "/usr/share/locale").unwrap();
+
+    textdomain("deb-installer").unwrap();
+    bind_textdomain_codeset("deb-installer", "UTF-8").unwrap();
 
     let debconf_helper = start_kde_debconf();
-
-    let mut debconf_child = None;
-
+    let mut _debconf_child = None;
     match debconf_helper {
         Err(e) => error!("Failed to start debconf-kde-helper: {e}"),
-        Ok(child) => debconf_child = Some(child),
+        Ok(child) => _debconf_child = Some(child),
     }
 
-    let installer = DebInstaller::new().unwrap();
+    let style = env::var("QT_QUICK_CONTROLS_STYLE");
+    if style.is_err() {
+        QQuickStyle::set_style(&QString::from("org.kde.desktop"));
+    }
 
-    set_info(&arg, &installer);
+    QGuiApplication::set_desktop_file_name(&QString::from("io.aosc.deb_installer"));
 
-    let argc = arg.to_string();
+    let mut app = QGuiApplication::new();
+    let mut engine = QQmlApplicationEngine::new();
 
-    let ui_weak = installer.as_weak();
-    let ui_weak_2 = ui_weak.clone();
+    if let Some(engine) = engine.as_mut() {
+        engine.load(&QUrl::from("qrc:/qt/qml/io/aosc/DebInstaller/src/main.qml"));
+    }
 
-    let (progress_tx, progress_rx) = flume::unbounded();
-
-    installer.on_install(move || {
-        let t = on_install(argc.clone(), progress_tx.clone());
-
-        let ui_weak_2 = ui_weak_2.clone();
-
-        thread::spawn(move || {
-            let res = t.join().unwrap();
-            if let Err(e) = res {
-                let _ = ui_weak_2.upgrade_in_event_loop(move |ui| {
-                    let old = ui.get_message();
-                    let new_msg = slint::format!("{}{}\n", old, e);
-                    ui.set_message(new_msg);
-                });
-            }
-        });
-    });
-
-    thread::spawn(move || {
-        loop {
-            let Ok(progress) = progress_rx.recv() else {
-                break;
-            };
-
-            match progress {
-                Progress::Percent(p) => {
-                    let _ = ui_weak.upgrade_in_event_loop(move |ui| {
-                        ui.set_progress(p as f32 / 100.0);
-                    });
-                }
-                Progress::Message(msg) => {
-                    let _ = ui_weak.upgrade_in_event_loop(move |ui| {
-                        let old = ui.get_message();
-                        let new_msg = slint::format!("{}{}\n", old, msg);
-                        ui.set_message(new_msg);
-                    });
-                }
-                Progress::Done => {
-                    let _ = ui_weak.upgrade_in_event_loop(move |ui| {
-                        ui.set_finished(true);
-                    });
-                }
-            }
-        }
-    });
-
-    handle_exit(&installer, debconf_child);
-
-    installer.run().unwrap();
-}
-
-#[derive(IntoPrimitive)]
-#[repr(u8)]
-enum InstallAction {
-    Install = 0,
-    ReInstall = 1,
-    Upgrade = 2,
-    Downgrade = 3,
-}
-
-fn set_info(arg: &str, installer: &DebInstaller) {
-    let apt = OmaApt::new(
-        vec![arg.to_string()],
-        OmaAptArgs::builder().build(),
-        false,
-        AptConfig::new(),
-    );
-
-    match apt {
-        Ok(mut apt) => {
-            let info = get_package(&mut apt, arg);
-
-            let (pkg, mut can_install) = match info {
-                Ok(info) => {
-                    installer.set_err_num(0);
-                    (Some(info), true)
-                }
-                Err(e) => {
-                    if let Some(e) = e.downcast_ref::<OmaAptError>() {
-                        let err_num = u8_oma_pm_errors(e);
-                        installer.set_err_num(err_num.into());
-                        installer.set_err(e.to_string().into());
-                    } else {
-                        installer.set_err(e.to_string().into());
-                    }
-                    (None, false)
-                }
-            };
-
-            if let Err(e) = apt.resolve(true, false) {
-                let err_num = u8_oma_pm_errors(&e);
-                installer.set_err_num(err_num.into());
-                installer.set_err(e.to_string().into());
-                can_install = false;
-            }
-
-            if let Some(oma_pkg) = pkg {
-                let pkg = oma_pkg.package(&apt.cache);
-                let version = oma_pkg.version(&apt.cache);
-                let info = oma_pkg.pkg_info(&apt.cache);
-
-                if let Err(e) = apt
-                    .summary(SummarySort::default(), |_| false, |_| false)
-                    .and_then(|summary| apt.check_disk_size(&summary))
-                {
-                    let err_num = u8_oma_pm_errors(&e);
-                    installer.set_err_num(err_num.into());
-                    installer.set_err(e.to_string().into());
-                    can_install = false;
-                }
-
-                let info = match info {
-                    Ok(info) => Some(info),
-                    Err(e) => {
-                        let err_num = u8_oma_pm_errors(&e);
-                        installer.set_err_num(err_num.into());
-                        installer.set_err(e.to_string().into());
-                        can_install = false;
-                        None
-                    }
-                };
-
-                installer.set_can_install(can_install);
-
-                if let Some(info) = info {
-                    installer.set_package(info.package.to_string().into());
-                    installer.set_description(info.short_description.into());
-                    installer.set_version(info.version.to_string().into());
-                    installer.set_installed_size(HumanBytes(info.install_size).to_shared_string());
-
-                    let mut archs = apt.get_architectures();
-
-                    // Should support noarch package
-                    archs.push("all".to_string());
-
-                    if !archs.contains(&version.arch().to_string()) {
-                        installer.set_err_num(100);
-                        installer.set_can_install(false);
-                    }
-
-                    let mut action = InstallAction::Install;
-
-                    if let Some(installed) = pkg.installed() {
-                        action = match version.cmp(&installed) {
-                            std::cmp::Ordering::Less => InstallAction::Downgrade,
-                            std::cmp::Ordering::Equal => InstallAction::ReInstall,
-                            std::cmp::Ordering::Greater => InstallAction::Upgrade,
-                        };
-                    }
-
-                    let action: u8 = action.into();
-                    installer.set_action(action.into());
-                }
-            } else {
-                installer.set_can_install(false);
-            }
-        }
-        Err(e) => {
-            installer.set_status(e.to_string().into());
-        }
-    };
-}
-
-fn handle_exit(installer: &DebInstaller, debconf_child: Option<Child>) {
-    let kill_debconf = Arc::new(AtomicBool::new(false));
-    let can_exit = Arc::new(AtomicBool::new(false));
-    let cec = can_exit.clone();
-    let cec2 = can_exit.clone();
-    let kc = kill_debconf.clone();
-    let kc2 = kill_debconf.clone();
-
-    let weak = installer.as_weak();
-
-    let has_debconf_child = debconf_child.is_some();
-
-    // 关闭按钮
-    installer.on_close(move || {
-        if has_debconf_child {
-            // 杀掉 debconf helper 进程
-            kill_debconf.store(true, Ordering::SeqCst);
-            // 等待是否可以退出
-            while !cec.load(Ordering::SeqCst) {}
-        }
-        process::exit(0);
-    });
-
-    // 窗口关闭按钮
-    installer.window().on_close_requested(move || {
-        let ui = weak.unwrap();
-        if !ui.get_finished() && ui.get_is_install() {
-            return slint::CloseRequestResponse::KeepWindowShown;
-        }
-
-        if has_debconf_child {
-            kc2.store(true, Ordering::SeqCst);
-            while !cec2.load(Ordering::SeqCst) {}
-        }
-
-        slint::CloseRequestResponse::HideWindow
-    });
-
-    if let Some(mut child) = debconf_child {
-        thread::spawn(move || {
-            loop {
-                // 接收杀死 debconf-helper 请求
-                if kc.load(Ordering::SeqCst) {
-                    let _ = child.kill();
-                    can_exit.store(true, Ordering::SeqCst);
-                    break;
-                }
-                thread::sleep(Duration::from_millis(100));
-            }
-        });
+    if let Some(app) = app.as_mut() {
+        app.exec();
     }
 }
 
-fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
+pub fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
     let matcher = PackagesMatcher::builder()
         .filter_candidate(true)
         .filter_downloadable_candidate(false)
@@ -409,34 +187,40 @@ fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> {
         .try_clone()?)
 }
 
-fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {
+pub fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {
     thread::spawn(move || -> Result<()> {
         let txc = tx.clone();
         let txc2 = tx.clone();
 
         let (mut backend_child, reader) = start_backend()?;
-
         let reader = BufReader::new(reader);
 
         thread::spawn(move || {
             reader.lines().for_each(|line| match line {
                 Ok(line) => {
-                    txc.send(Progress::Message(
+                    let _ = txc.send(Progress::Message(
                         console::strip_ansi_codes(&line).to_string(),
-                    ))
-                    .inspect_err(|e| error!("{e}"))
-                    .ok();
+                    ));
                 }
-                Err(e) => {
-                    error!("{e}")
-                }
+                Err(e) => error!("{e}"),
             });
         });
 
         thread::spawn(move || {
-            let _wait = backend_child.wait();
-            if let Err(e) = txc2.send(Progress::Done) {
-                error!("{e}");
+            let wait = backend_child.wait();
+            match wait {
+                Ok(status) => {
+                    if !status.success() {
+                        let _ = txc2.send(Progress::Err(format!(
+                            "Backend process exited with status: {status}"
+                        )));
+                    } else {
+                        let _ = txc2.send(Progress::Done);
+                    }
+                }
+                Err(e) => {
+                    let _ = txc2.send(Progress::Err(format!("Failed to wait for backend: {e}")));
+                }
             }
         });
 
@@ -450,44 +234,45 @@ async fn on_install_inner(argc: String, tx: flume::Sender<Progress>) -> Result<(
     let client = OmaClientProxy::new(&conn).await?;
 
     loop {
-        let Ok(_msg) = client.ping().await else {
-            thread::sleep(Duration::from_millis(100));
-            continue;
-        };
-
-        break;
+        if client.ping().await.is_ok() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(100));
     }
 
-    client.install(argc).await?;
+    let _ = client.install(argc).await?;
 
     loop {
         let is_finished = client.is_finished().await?;
         let progress = client.get_progress().await?;
 
-        tx.send_async(Progress::Percent(progress)).await?;
+        let _ = tx.send_async(Progress::Percent(progress)).await;
 
         if progress == 100 || is_finished {
             let res = client.finished_get_result().await?;
-            tx.send_async(Progress::Message(res)).await?;
-            tx.send_async(Progress::Done).await?;
-            client.exit().await?;
+            let _ = tx.send_async(Progress::Message(res.clone())).await;
+            if res == "ok" {
+                let _ = tx.send_async(Progress::Done).await;
+            } else {
+                let _ = tx.send_async(Progress::Err(res)).await;
+            }
+            let _ = client.exit().await;
             return Ok(());
         }
 
-        thread::sleep(Duration::from_millis(100));
+        tokio::time::sleep(Duration::from_millis(100)).await;
     }
 }
 
 fn start_backend() -> Result<(Child, PipeReader)> {
     let (recv, send) = std::io::pipe()?;
-
     let child = Command::new("pkexec")
+        .arg("--keep-cwd")
         .arg(std::env::current_exe()?)
         .arg("--backend")
         .stdout(send.try_clone()?)
         .stderr(send)
         .spawn()?;
-
     Ok((child, recv))
 }
 
@@ -502,7 +287,6 @@ async fn run_backend() -> Result<()> {
     let _lock = oma_utils::get_file_lock(lock_path)?;
 
     let backend = Backend::default();
-
     let exit = backend.exit.clone();
 
     rustls::crypto::ring::default_provider()
@@ -522,7 +306,6 @@ async fn run_backend() -> Result<()> {
             debug!("Bye.");
             return Ok(());
         }
-
         thread::sleep(Duration::from_millis(100));
     }
 }
