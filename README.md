@@ -9,7 +9,7 @@ Dependencies
 ---
 
 - Rust (`rustc`) that is reasonably new
-- Qt 5
+- Qt 5 or Qt 6, along with the corresponding Kirigami and QQC2-Desktop-Style components
 - OpenSSL
 - libapt-pkg
 
