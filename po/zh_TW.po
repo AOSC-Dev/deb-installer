@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-10 21:02+0800\n"
-"PO-Revision-Date: 2024-11-14 17:16+0800\n"
+"PO-Revision-Date: 2026-06-11 16:39+0800\n"
 "Last-Translator: Kaiyang Wu <origincode@aosc.io>\n"
 "Language-Team: Chinese (Traditional Han script) <https://weblate.aosc.io/"
 "projects/deb-installer/deb-installer/zh_Hant/>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 3.4.1\n"
+"X-Generator: Poedit 3.9\n"
 
 #: src/main.qml:16 src/main.qml:24
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:16
@@ -49,34 +49,31 @@ msgstr "軟體套件安裝精靈"
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:57
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:70
 msgid "Welcome"
-msgstr ""
+msgstr "歡迎"
 
 #: src/main.qml:60
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:60
-#, fuzzy
 msgid "Installing…"
-msgstr "安裝"
+msgstr "安裝中…"
 
 #: src/main.qml:64
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:64
-#, fuzzy
 msgid "Installation Failed!"
-msgstr "軟體套件安裝精靈"
+msgstr "安裝失敗！"
 
 #: src/main.qml:66 src/main.qml:95
 msgid "Installation Sucessful!"
-msgstr ""
+msgstr "安裝成功！"
 
 #: src/main.qml:84
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:84
 msgid "View Log"
-msgstr ""
+msgstr "查看日誌"
 
 #: src/main.qml:90
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:90
-#, fuzzy
 msgid "Installation Log"
-msgstr "安裝"
+msgstr "安裝日誌"
 
 #: src/main.qml:103
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:103
@@ -92,18 +89,13 @@ msgstr "取消"
 
 #: src/main.qml:120
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:120
-#, fuzzy
 msgid ""
 "Please note that many 3rd-party software packages are not tested nor "
 "verified (they may not function as expected, or may contain malicious "
 "content)."
 msgstr ""
-"歡迎使用軟體套件安裝精靈。\n"
-"\n"
-"請注意：許多第三方軟體套件尚未經過發行版維護者測試或驗證，部分軟體可能不會正"
-"常工作，甚至包含惡意內容。\n"
-"\n"
-"要繼續安裝，請按下方「{}」按鈕（本精靈將提示您輸入管理者密碼）。"
+"請注意：許多第三方軟體套件尚未經過發行版維護者測試或驗證，部分軟體可能不"
+"會正常工作，甚至包含惡意內容。"
 
 #: src/main.qml:243
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:243
@@ -126,12 +118,12 @@ msgstr "磁碟空間不足"
 #: src/main.qml:252
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:252
 msgid "Unknown status or error"
-msgstr ""
+msgstr "未知狀態或錯誤"
 
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:66
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:95
 msgid "Installation sucessful!"
-msgstr ""
+msgstr "安裝成功！"
 
 #~ msgctxt "DebInstaller"
 #~ msgid "Architecture not match"
