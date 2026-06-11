@@ -3,16 +3,16 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-06-10 21:02+0800\n"
-"PO-Revision-Date: 2024-11-14 09:51+0000\n"
+"PO-Revision-Date: 2026-06-11 16:33+0800\n"
 "Last-Translator: Kaiyang Wu <origincode@aosc.io>\n"
 "Language-Team: Wu (Traditional Han script) <https://weblate.aosc.io/projects/"
 "deb-installer/deb-installer/wuu_Hant/>\n"
-"Language: wuu_Hant\n"
+"Language: zh_TW\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.8.1\n"
+"X-Generator: Poedit 3.9\n"
 
 #: src/main.qml:16 src/main.qml:24
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:16
@@ -49,34 +49,31 @@ msgstr "軟件包安裝嚮導"
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:57
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:70
 msgid "Welcome"
-msgstr ""
+msgstr "歡迎"
 
 #: src/main.qml:60
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:60
-#, fuzzy
 msgid "Installing…"
-msgstr "安裝"
+msgstr "安裝當中…"
 
 #: src/main.qml:64
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:64
-#, fuzzy
 msgid "Installation Failed!"
-msgstr "軟件包安裝嚮導"
+msgstr "安裝弗成功！"
 
 #: src/main.qml:66 src/main.qml:95
 msgid "Installation Sucessful!"
-msgstr ""
+msgstr "安裝成功！"
 
 #: src/main.qml:84
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:84
 msgid "View Log"
-msgstr ""
+msgstr "檢查日誌"
 
 #: src/main.qml:90
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:90
-#, fuzzy
 msgid "Installation Log"
-msgstr "安裝"
+msgstr "安裝日誌"
 
 #: src/main.qml:103
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:103
@@ -92,18 +89,13 @@ msgstr "取消"
 
 #: src/main.qml:120
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:120
-#, fuzzy
 msgid ""
 "Please note that many 3rd-party software packages are not tested nor "
 "verified (they may not function as expected, or may contain malicious "
 "content)."
 msgstr ""
-"歡迎使用軟件包安裝嚮導。\n"
-"\n"
-"請注意：交關第三方軟件包㬟經過發行版維護人員測試或者驗證，伊拉個功能可能弗大"
-"來三，甚至還有惡意內容。\n"
-"\n"
-"要繼續安裝，請撳下底隻“{}”按鈕（搿隻嚮導將會問儂要管理員密碼）。"
+"請注意：交關第三方軟件包㬟經過發行版維護人員嗰測試或者驗證，渠拉個功能可能弗"
+"大來三，還有可能有惡意內容。"
 
 #: src/main.qml:243
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:243
@@ -126,12 +118,12 @@ msgstr "硬盤空間弗夠"
 #: src/main.qml:252
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:252
 msgid "Unknown status or error"
-msgstr ""
+msgstr "未知嗰狀態或者錯誤"
 
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:66
 #: target/cxxqt/qml_modules/io/aosc/DebInstaller/src/main.qml:95
 msgid "Installation sucessful!"
-msgstr ""
+msgstr "安裝成功！"
 
 #~ msgctxt "DebInstaller"
 #~ msgid "Architecture not match"
