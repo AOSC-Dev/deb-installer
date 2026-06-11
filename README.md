@@ -42,7 +42,7 @@ install -Dvm644 ./data/io.aosc.deb_installer.conf \
     /usr/share/dbus-1/system.d/io.aosc.deb_installer.conf
 
 # Install the icon and .desktop entry.
-install -Dvm644 ./data/io.aosc.deb_installer.{png,svg} \
+install -Dvm644 ./data/io.aosc.deb_installer.svg \
     -t /usr/share/pixmaps/
 install -Dvm644 ./data/io.aosc.deb_installer.desktop \
     /usr/share/applications/io.aosc.deb_installer.desktop

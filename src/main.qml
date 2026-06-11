@@ -170,8 +170,8 @@ Kirigami.ApplicationWindow {
                     
                     source: "qrc:/qt/qml/io/aosc/DebInstaller/data/io.aosc.deb_installer.svg"
 
-                    width: 150
-                    height: 150
+                    width: 128
+                    height: 128
                     rotation: 15
 
                     SequentialAnimation {
