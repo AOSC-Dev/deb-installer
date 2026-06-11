@@ -109,18 +109,26 @@ impl Default for DebInstallerRust {
 
 impl qobject::DebInstaller {
     pub fn load_package_info(self: Pin<&mut Self>) {
+        let mut this = self;
         let path = crate::PKG_PATH.get().unwrap();
         let path_str = path.to_string_lossy().to_string();
-        let mut apt = OmaApt::new(
+        let apt = match OmaApt::new(
             vec![path_str.clone()],
             OmaAptArgs::builder().build(),
             false,
             AptConfig::new(),
-        )
-        .unwrap();
+        ) {
+            Ok(apt) => Some(apt),
+            Err(e) => {
+                this.as_mut().set_message(QString::from(e.to_string()));
+                this.as_mut().set_status(InstallStatus::Other);
+                None
+            }
+        };
 
-        if let Ok(pkg) = crate::get_package(&mut apt, &path_str) {
-            let mut this = self;
+        if let Some(mut apt) = apt
+            && let Ok(pkg) = crate::get_package(&mut apt, &path_str)
+        {
             this.as_mut().set_package(QString::from(pkg.raw_pkg.name()));
             this.as_mut()
                 .set_pkg_version(QString::from(pkg.version(&apt.cache).version()));
