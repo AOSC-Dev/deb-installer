@@ -33,7 +33,7 @@ Kirigami.ApplicationWindow {
     minimumHeight: 320
     maximumHeight: 320
     title: installer.i18n("Package Installation Wizard")
-    onClosing: (closeEvent) => {
+    onClosing: closeEvent => {
         if (installer.work_status === DebInstaller.Working)
             closeEvent.accepted = false;
         else
@@ -70,8 +70,7 @@ Kirigami.ApplicationWindow {
             id: actionInstall
             text: root.install_button()
             icon.name: "document-save"
-            visible: installer.work_status == DebInstaller.Idle &&
-                        installer.status === DebInstaller.OkToInstall
+            visible: installer.work_status == DebInstaller.Idle && installer.status === DebInstaller.OkToInstall
             enabled: installer.work_status != DebInstaller.Working
             onTriggered: installer.install()
         }
@@ -108,9 +107,9 @@ Kirigami.ApplicationWindow {
 
         Component.onCompleted: {
             var actionList = [actionInstall, actionViewLog, actionClose];
-            
+
             // 探测当前环境：如果 actions 属性支持直接 push，说明是 qt6 kirigami
-            if (typeof(mainPage.actions) !== "undefined" && typeof(mainPage.actions.push) === "function") {
+            if (typeof (mainPage.actions) !== "undefined" && typeof (mainPage.actions.push) === "function") {
                 for (var i = 0; i < actionList.length; i++) {
                     mainPage.actions.push(actionList[i]);
                 }
@@ -138,7 +137,7 @@ Kirigami.ApplicationWindow {
 
             ColumnLayout {
                 visible: installer.work_status != DebInstaller.Idle && !root.view_log
-                
+
                 Controls.ProgressBar {
                     value: installer.progress
                     Layout.fillWidth: true
@@ -150,10 +149,7 @@ Kirigami.ApplicationWindow {
         header: Kirigami.AbstractCard {
             Layout.fillWidth: true
             Layout.preferredHeight: root.view_log ? mainPage.height : Kirigami.Units.gridUnit * 10.5
-            implicitHeight: root.view_log ? 
-                             ((typeof(mainPage.actions) !== "undefined" && typeof(mainPage.actions.push) === "function") ? 
-                               mainPage.height : (mainPage.height - Kirigami.Units.gridUnit * 2.0)) : 
-                             Kirigami.Units.gridUnit * 10.5
+            implicitHeight: root.view_log ? ((typeof (mainPage.actions) !== "undefined" && typeof (mainPage.actions.push) === "function") ? mainPage.height : (mainPage.height - Kirigami.Units.gridUnit * 2.0)) : Kirigami.Units.gridUnit * 10.5
 
             // Animation block.
             Rectangle {
@@ -167,10 +163,10 @@ Kirigami.ApplicationWindow {
                 anchors {
                     right: parent.right
                 }
-                
+
                 Image {
                     id: shakeItem
-                    
+
                     source: "qrc:/qt/qml/io/aosc/DebInstaller/data/io.aosc.deb_installer.svg"
 
                     width: 128
@@ -224,7 +220,7 @@ Kirigami.ApplicationWindow {
                     Layout.rightMargin: 166
                     Layout.topMargin: 18
                 }
-                
+
                 Controls.Label {
                     text: installer.pkg_description
                     font.bold: false
@@ -305,16 +301,16 @@ Kirigami.ApplicationWindow {
             }
 
             Rectangle {
+                id: logWrapper
                 visible: root.view_log
                 anchors.fill: parent
-                id: logWrapper
 
                 color: Kirigami.Theme.textColor
                 radius: 0
 
                 ListView {
                     id: logView
-                    
+
                     anchors.fill: parent
                     anchors.margins: Kirigami.Units.largeSpacing
                     spacing: Kirigami.Units.mediumSpacing
@@ -322,7 +318,9 @@ Kirigami.ApplicationWindow {
                     Connections {
                         target: installer
                         function onMessageChanged() {
-                            logModel.append({ "msg": installer.message });
+                            logModel.append({
+                                "msg": installer.message
+                            });
                         }
                     }
 
@@ -334,7 +332,7 @@ Kirigami.ApplicationWindow {
                         text: model.msg
                         font.family: "Monospace"
                         // Equivalent to terminal text colour.
-                        color: Kirigami.Theme.backgroundColor;
+                        color: Kirigami.Theme.backgroundColor
                         width: logView.width - Kirigami.Units.largeSpacing
                         wrapMode: Text.WordWrap
                     }
