@@ -319,15 +319,6 @@ Kirigami.ApplicationWindow {
                     anchors.margins: Kirigami.Units.largeSpacing
                     spacing: Kirigami.Units.mediumSpacing
 
-                    onCountChanged: {
-                        logView.forceLayout();
-                        logView.positionViewAtEnd();
-                    }
-                    onVisibleChanged: {
-                        if (visible) {
-                            logView.forceLayout();
-                        }
-                    }
                     Connections {
                         target: installer
                         function onMessageChanged() {
@@ -350,7 +341,6 @@ Kirigami.ApplicationWindow {
 
                     Controls.ScrollBar.vertical: Controls.ScrollBar {
                         policy: Controls.ScrollBar.AsNeeded
-                        height: logView.height
                     }
                 }
             }
