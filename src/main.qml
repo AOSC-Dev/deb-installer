@@ -150,7 +150,10 @@ Kirigami.ApplicationWindow {
         header: Kirigami.AbstractCard {
             Layout.fillWidth: true
             Layout.preferredHeight: root.view_log ? mainPage.height : Kirigami.Units.gridUnit * 10.5
-            implicitHeight: root.view_log ? mainPage.height : Kirigami.Units.gridUnit * 10.5
+            implicitHeight: root.view_log ? 
+                             ((typeof(mainPage.actions) !== "undefined" && typeof(mainPage.actions.push) === "function") ? 
+                               mainPage.height : (mainPage.height - Kirigami.Units.gridUnit * 2.0)) : 
+                             Kirigami.Units.gridUnit * 10.5
 
             // Animation block.
             Rectangle {
@@ -297,32 +300,34 @@ Kirigami.ApplicationWindow {
             }
 
             background: Rectangle {
-                color: {
-                    if (root.view_log) {
-                        // Equivalent to terminal background.
-                        return Kirigami.Theme.textColor;
-                    } else {
-                        return Kirigami.Theme.backgroundColor;
-                    }
-                }
+                color: root.view_log ? Kirigami.Theme.textColor : Kirigami.Theme.backgroundColor
                 radius: 0
             }
 
             Rectangle {
                 visible: root.view_log
                 anchors.fill: parent
+                id: logWrapper
 
                 color: Kirigami.Theme.textColor
                 radius: 0
 
                 ListView {
                     id: logView
-
+                    
                     anchors.fill: parent
                     anchors.margins: Kirigami.Units.largeSpacing
                     spacing: Kirigami.Units.mediumSpacing
 
-                    onCountChanged: logView.positionViewAtEnd()
+                    onCountChanged: {
+                        logView.forceLayout();
+                        logView.positionViewAtEnd();
+                    }
+                    onVisibleChanged: {
+                        if (visible) {
+                            logView.forceLayout();
+                        }
+                    }
                     Connections {
                         target: installer
                         function onMessageChanged() {
@@ -339,12 +344,13 @@ Kirigami.ApplicationWindow {
                         font.family: "Monospace"
                         // Equivalent to terminal text colour.
                         color: Kirigami.Theme.backgroundColor;
-                        width: logView.width
+                        width: logView.width - Kirigami.Units.largeSpacing
                         wrapMode: Text.WordWrap
                     }
 
                     Controls.ScrollBar.vertical: Controls.ScrollBar {
                         policy: Controls.ScrollBar.AsNeeded
+                        height: logView.height
                     }
                 }
             }
