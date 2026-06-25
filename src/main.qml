@@ -258,13 +258,7 @@ Kirigami.ApplicationWindow {
                         }
                         return status + "・" + installer.pkg_version + "・" + installer.pkg_size;
                     }
-                    color: {
-                        if (installer.work_status == DebInstaller.OkToInstall) {
-                            return "green";
-                        } else {
-                            return "red";
-                        }
-                    }
+                    color: installer.status === DebInstaller.OkToInstall ? "green" : "red"
                 }
 
                 Controls.Label {
