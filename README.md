@@ -3,7 +3,7 @@ deb-installer
 
 Graphical `.deb` package installation wizard.
 
-![Main interface](/data/screenshot.png)
+![Main interface](/data/screenshot.webp)
 
 Dependencies
 ---
