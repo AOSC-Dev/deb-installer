@@ -260,7 +260,7 @@ impl Backend {
 
             install_pm_clone.store(100, Ordering::SeqCst);
 
-            Ok(())
+            Ok(result?)
         }));
 
         self.install_thread = thread;
