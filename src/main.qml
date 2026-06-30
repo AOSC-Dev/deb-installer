@@ -209,7 +209,7 @@ Kirigami.ApplicationWindow {
                 anchors.fill: parent
 
                 Controls.Label {
-                    text: installer.package
+                    text: installer.package ? installer.package : "Unknown"
                     font.bold: true
                     font.pointSize: 22
                     wrapMode: Text.WordWrap
@@ -222,7 +222,7 @@ Kirigami.ApplicationWindow {
                 }
 
                 Controls.Label {
-                    text: installer.pkg_description
+                    text: installer.pkg_description ? installer.pkg_description : "Unknown"
                     font.bold: false
                     wrapMode: Text.WordWrap
 
@@ -256,7 +256,12 @@ Kirigami.ApplicationWindow {
                             status = installer.i18n("Unknown status or error");
                             break;
                         }
-                        return status + "・" + installer.pkg_version + "・" + installer.pkg_size;
+
+                        if (installer.pkg_version && installer.pkg_size) {
+                            return status + "・" + installer.pkg_version + "・" + installer.pkg_size;
+                        } else {
+                            return status;
+                        }
                     }
                     color: installer.status === DebInstaller.OkToInstall ? "green" : "red"
                 }
