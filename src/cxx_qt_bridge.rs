@@ -68,7 +68,7 @@ use core::pin::Pin;
 use cxx_qt::Threading;
 use cxx_qt_lib::QString;
 use gettextrs::gettext;
-use oma_pm::apt::{AptConfig, OmaApt, OmaAptArgs, OmaAptError};
+use oma_pm::apt::{OmaApt, OmaAptArgs, OmaAptError};
 
 use crate::{
     Progress,
@@ -112,12 +112,7 @@ impl qobject::DebInstaller {
         let mut this = self;
         let path = crate::PKG_PATH.get().unwrap();
         let path_str = path.to_string_lossy().to_string();
-        let apt = match OmaApt::new(
-            vec![path_str.clone()],
-            OmaAptArgs::builder().build(),
-            false,
-            AptConfig::new(),
-        ) {
+        let apt = match OmaApt::new(vec![path_str.clone()], OmaAptArgs::builder().build(), false) {
             Ok(apt) => Some(apt),
             Err(e) => {
                 this.as_mut().set_message(QString::from(e.to_string()));

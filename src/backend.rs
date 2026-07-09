@@ -10,13 +10,13 @@ use std::{
 };
 
 use anyhow::Chain;
+use apt_auth_config::AuthConfig;
 use flume::unbounded;
 use oma_fetch::SingleDownloadError;
-use oma_fetch::reqwest::ClientBuilder;
 use oma_history::HistoryInfo;
 use oma_pm::{
     CommitConfig, PackageDownloadEvent,
-    apt::{AptConfig, InstallProgressOpt::TermLike, OmaApt, OmaAptArgs},
+    apt::{InstallProgressOpt::TermLike, OmaApt, OmaAptArgs},
     matches::PackagesMatcher,
     progress::InstallProgressManager,
     sort::SummarySort,
@@ -161,13 +161,7 @@ fn handle_no_pb_download_error(file_name: String, error: SingleDownloadError) {
 }
 
 impl InstallProgressManager for DebInstallerInstallProgressManager {
-    fn status_change(
-        &self,
-        _pkgname: &str,
-        steps_done: u64,
-        total_steps: u64,
-        _config: &AptConfig,
-    ) {
+    fn status_change(&self, _pkgname: &str, steps_done: u64, total_steps: u64) {
         let percent = steps_done as f32 / total_steps as f32;
         let percent = (percent * 100.0).round() as u32;
         self.progress.store(percent, Ordering::SeqCst);
@@ -192,12 +186,8 @@ impl Backend {
                 env::set_var("DEBCONF_PIPE", "/tmp/debkonf-sock");
             }
 
-            let mut apt = OmaApt::new(
-                vec![path.to_string()],
-                OmaAptArgs::builder().build(),
-                false,
-                AptConfig::new(),
-            )?;
+            let mut apt =
+                OmaApt::new(vec![path.to_string()], OmaAptArgs::builder().build(), false)?;
 
             let matcher = PackagesMatcher::builder()
                 .filter_candidate(true)
@@ -211,8 +201,22 @@ impl Backend {
             apt.install(&pkgs, true)?;
             apt.resolve(true, false)?;
 
-            let client = ClientBuilder::new().user_agent("oma/1.14.514").build()?;
-            let op = apt.summary(SummarySort::default(), |_| false, |_| false)?;
+            let auth = AuthConfig::system("/").ok();
+
+            let client = oma_fetch::reqwest::Client::builder()
+                .user_agent("oma/1.14.514")
+                .build()
+                .map(|client| {
+                    if let Some(auth) = auth {
+                        reqwest_middleware::ClientBuilder::new(client)
+                            .with_init(apt_auth_config::reqwuest::AuthMiddleware::new(auth))
+                            .build()
+                    } else {
+                        client.into()
+                    }
+                })?;
+
+            let op = apt.build_transaction(SummarySort::default(), |_| false, |_| false)?;
 
             let (download_tx, download_rx) = unbounded();
 
@@ -221,7 +225,19 @@ impl Backend {
                 pb.render_progress(&download_rx);
             });
 
-            let start_time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
+            #[cfg(feature = "aosc")]
+            let mut history = oma_history::History::new("/var/lib/oma/history.db", true, false)?;
+            
+            #[cfg(feature = "aosc")]
+            let id = history.write(HistoryInfo {
+                summary: &op,
+                start_time: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64,
+                success: false,
+                is_fix_broken: false,
+                is_undo: false,
+                topics_enabled: Vec::new(),
+                topics_disabled: Vec::new(),
+            })?;
 
             let result = apt.commit(
                 TermLike(Box::new(DebInstallerInstallProgressManager {
@@ -230,33 +246,19 @@ impl Backend {
                 &op,
                 &client,
                 CommitConfig {
-                    auth_config: None,
                     network_thread: None,
                     download_only: false,
                 },
                 None,
-                |event| async {
-                    if let Err(e) = download_tx.send_async(event).await {
+                move |event| {
+                    if let Err(e) = download_tx.send(event) {
                         debug!("Send progress channel got error: {}; maybe check archive work still in progress", e);
                     }
                 },
             );
 
             #[cfg(feature = "aosc")]
-            {
-                let mut history =
-                    oma_history::History::new("/var/lib/oma/history.db", true, false)?;
-
-                history.write(HistoryInfo {
-                    summary: &op,
-                    start_time,
-                    success: result.is_ok(),
-                    is_fix_broken: false,
-                    is_undo: false,
-                    topics_enabled: Vec::new(),
-                    topics_disabled: Vec::new(),
-                })?;
-            }
+            history.edit_status(id, result.is_ok())?;
 
             install_pm_clone.store(100, Ordering::SeqCst);
 
