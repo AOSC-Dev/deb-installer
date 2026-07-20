@@ -18,7 +18,7 @@ use oma_pm::{apt::OmaApt, matches::PackagesMatcher, pkginfo::OmaPackage};
 use tokio::fs::create_dir_all;
 use tracing::{debug, error, level_filters::LevelFilter};
 use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
-use zbus::{Connection, connection, proxy};
+use zbus::{Connection, connection, fdo, proxy};
 
 use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QQuickStyle, QString, QUrl};
 
@@ -240,15 +240,25 @@ async fn on_install_inner(argc: String, tx: flume::Sender<ProgressEvent>) -> Res
     let conn = Connection::system().await?;
     let client = OmaClientProxy::new(&conn).await?;
 
-    // Wait for the backend service to appear
-    loop {
-        if client.ping().await.is_ok() {
-            break;
+    // Wait for the backend to start
+    let dbus_proxy = fdo::DBusProxy::new(&conn).await?;
+    if !dbus_proxy
+        .name_has_owner(zbus::names::BusName::from_static_str(
+            "io.aosc.DebInstaller",
+        )?)
+        .await?
+    {
+        let name_stream = dbus_proxy.receive_name_owner_changed().await?;
+        pin_mut!(name_stream);
+
+        while let Some(signal) = name_stream.next().await {
+            let args = signal.args()?;
+            if args.name() == "io.aosc.DebInstaller" && args.new_owner().as_ref().is_some() {
+                break;
+            }
         }
-        thread::sleep(Duration::from_millis(100));
     }
 
-    // Subscribe to signals before calling install to avoid race conditions
     let progress_stream = client.receive_progress().await?;
     let finished_stream = client.receive_finished().await?;
     pin_mut!(progress_stream);

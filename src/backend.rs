@@ -283,7 +283,6 @@ impl Backend {
 
             let _ = rt.block_on(Backend::progress(&ctxt, 100));
 
-            // Emit Finished signal
             let result_str = match &result {
                 Ok(()) => "ok".to_string(),
                 Err(e) => format!("{e}"),
