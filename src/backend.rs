@@ -3,7 +3,7 @@ use std::{
     env,
     sync::{
         Arc,
-        atomic::{AtomicBool, AtomicU32, Ordering},
+        atomic::{AtomicU32, Ordering},
     },
     thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
@@ -22,18 +22,19 @@ use oma_pm::{
     sort::SummarySort,
 };
 use oma_utils::human_bytes::HumanBytes;
+use tokio::sync::Notify;
 use tracing::{debug, error, info};
 use zbus::interface;
 use zbus::object_server::SignalEmitter;
 
 pub struct Backend {
-    pub exit: Arc<AtomicBool>,
+    pub exit: Arc<Notify>,
 }
 
 impl Default for Backend {
     fn default() -> Self {
         Self {
-            exit: Arc::new(AtomicBool::new(false)),
+            exit: Arc::new(Notify::new()),
         }
     }
 }
@@ -291,12 +292,8 @@ impl Backend {
         true
     }
 
-    fn ping(&self) -> &'static str {
-        "pong"
-    }
-
     fn exit(&self) -> bool {
-        self.exit.store(true, Ordering::Relaxed);
+        self.exit.notify_one();
         true
     }
 }

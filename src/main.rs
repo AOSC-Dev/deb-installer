@@ -3,9 +3,8 @@ use std::{
     io::{BufRead, BufReader, PipeReader},
     path::{Path, PathBuf},
     process::{Child, Command, exit},
-    sync::{OnceLock, atomic::Ordering},
+    sync::OnceLock,
     thread::{self, JoinHandle},
-    time::Duration,
 };
 
 use anyhow::{Context, Result};
@@ -324,11 +323,8 @@ async fn run_backend() -> Result<()> {
 
     debug!("zbus session created");
 
-    loop {
-        if exit.load(Ordering::Relaxed) {
-            debug!("Bye.");
-            return Ok(());
-        }
-        thread::sleep(Duration::from_millis(100));
-    }
+    exit.notified().await;
+    debug!("Bye.");
+
+    Ok(())
 }
