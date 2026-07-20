@@ -11,6 +11,8 @@ use std::{
 use anyhow::{Context, Result};
 use backend::Backend;
 use clap::Parser;
+use futures::StreamExt;
+use futures::pin_mut;
 use gettextrs::{bind_textdomain_codeset, bindtextdomain, textdomain};
 use oma_pm::{apt::OmaApt, matches::PackagesMatcher, pkginfo::OmaPackage};
 use tokio::fs::create_dir_all;
@@ -42,15 +44,18 @@ struct Args {
 )]
 trait OmaClient {
     async fn install(&self, path: String) -> zbus::Result<bool>;
-    async fn get_progress(&self) -> zbus::Result<u32>;
     async fn ping(&self) -> zbus::Result<String>;
-    async fn is_finished(&self) -> zbus::Result<bool>;
-    async fn finished_get_result(&self) -> zbus::Result<String>;
     async fn exit(&self) -> zbus::Result<bool>;
+
+    #[zbus(signal)]
+    async fn progress(&self, percent: u32) -> zbus::Result<()>;
+
+    #[zbus(signal)]
+    async fn finished(&self, result: String) -> zbus::Result<()>;
 }
 
 #[derive(Debug)]
-pub enum Progress {
+pub enum ProgressEvent {
     Percent(u32),
     Message(String),
     Done,
@@ -187,7 +192,7 @@ pub fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> 
         .try_clone()?)
 }
 
-pub fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Result<()>> {
+pub fn on_install(argc: String, tx: flume::Sender<ProgressEvent>) -> JoinHandle<Result<()>> {
     thread::spawn(move || -> Result<()> {
         let txc = tx.clone();
         let txc2 = tx.clone();
@@ -198,7 +203,7 @@ pub fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Resul
         thread::spawn(move || {
             reader.lines().for_each(|line| match line {
                 Ok(line) => {
-                    let _ = txc.send(Progress::Message(
+                    let _ = txc.send(ProgressEvent::Message(
                         console::strip_ansi_codes(&line).to_string(),
                     ));
                 }
@@ -211,15 +216,17 @@ pub fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Resul
             match wait {
                 Ok(status) => {
                     if !status.success() {
-                        let _ = txc2.send(Progress::Err(format!(
+                        let _ = txc2.send(ProgressEvent::Err(format!(
                             "Backend process exited with status: {status}"
                         )));
                     } else {
-                        let _ = txc2.send(Progress::Done);
+                        let _ = txc2.send(ProgressEvent::Done);
                     }
                 }
                 Err(e) => {
-                    let _ = txc2.send(Progress::Err(format!("Failed to wait for backend: {e}")));
+                    let _ = txc2.send(ProgressEvent::Err(format!(
+                        "Failed to wait for backend: {e}"
+                    )));
                 }
             }
         });
@@ -229,10 +236,11 @@ pub fn on_install(argc: String, tx: flume::Sender<Progress>) -> JoinHandle<Resul
 }
 
 #[tokio::main]
-async fn on_install_inner(argc: String, tx: flume::Sender<Progress>) -> Result<()> {
+async fn on_install_inner(argc: String, tx: flume::Sender<ProgressEvent>) -> Result<()> {
     let conn = Connection::system().await?;
     let client = OmaClientProxy::new(&conn).await?;
 
+    // Wait for the backend service to appear
     loop {
         if client.ping().await.is_ok() {
             break;
@@ -240,27 +248,32 @@ async fn on_install_inner(argc: String, tx: flume::Sender<Progress>) -> Result<(
         thread::sleep(Duration::from_millis(100));
     }
 
+    // Subscribe to signals before calling install to avoid race conditions
+    let progress_stream = client.receive_progress().await?;
+    let finished_stream = client.receive_finished().await?;
+    pin_mut!(progress_stream);
+    pin_mut!(finished_stream);
+
     let _ = client.install(argc).await?;
 
     loop {
-        let is_finished = client.is_finished().await?;
-        let progress = client.get_progress().await?;
-
-        let _ = tx.send_async(Progress::Percent(progress)).await;
-
-        if progress == 100 || is_finished {
-            let res = client.finished_get_result().await?;
-            let _ = tx.send_async(Progress::Message(res.clone())).await;
-            if res == "ok" {
-                let _ = tx.send_async(Progress::Done).await;
-            } else {
-                let _ = tx.send_async(Progress::Err(res)).await;
+        tokio::select! {
+            Some(signal) = progress_stream.next() => {
+                let args = signal.args()?;
+                let _ = tx.send_async(ProgressEvent::Percent(args.percent)).await;
             }
-            let _ = client.exit().await;
-            return Ok(());
+            Some(signal) = finished_stream.next() => {
+                let args = signal.args()?;
+                let _ = tx.send_async(ProgressEvent::Message(args.result.clone())).await;
+                if args.result == "ok" {
+                    let _ = tx.send_async(ProgressEvent::Done).await;
+                } else {
+                    let _ = tx.send_async(ProgressEvent::Err(args.result)).await;
+                }
+                let _ = client.exit().await;
+                return Ok(());
+            }
         }
-
-        tokio::time::sleep(Duration::from_millis(100)).await;
     }
 }
 

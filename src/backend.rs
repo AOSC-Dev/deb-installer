@@ -5,11 +5,11 @@ use std::{
         Arc,
         atomic::{AtomicBool, AtomicU32, Ordering},
     },
-    thread::{self, JoinHandle},
+    thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
-use anyhow::Chain;
+use anyhow::{Chain, Context};
 use apt_auth_config::AuthConfig;
 use flume::unbounded;
 use oma_fetch::SingleDownloadError;
@@ -23,19 +23,16 @@ use oma_pm::{
 };
 use oma_utils::human_bytes::HumanBytes;
 use tracing::{debug, error, info};
+use zbus::object_server::SignalEmitter;
 use zbus::interface;
 
 pub struct Backend {
-    install_thread: Option<JoinHandle<Result<(), anyhow::Error>>>,
-    install_pm: Arc<AtomicU32>,
     pub exit: Arc<AtomicBool>,
 }
 
 impl Default for Backend {
     fn default() -> Self {
         Self {
-            install_thread: None,
-            install_pm: Arc::new(AtomicU32::new(0)),
             exit: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -43,6 +40,8 @@ impl Default for Backend {
 
 struct DebInstallerInstallProgressManager {
     progress: Arc<AtomicU32>,
+    rt: tokio::runtime::Handle,
+    ctxt: SignalEmitter<'static>,
 }
 
 pub trait RenderPackagesDownloadProgress {
@@ -165,6 +164,8 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
         let percent = steps_done as f32 / total_steps as f32;
         let percent = (percent * 100.0).round() as u32;
         self.progress.store(percent, Ordering::SeqCst);
+
+        let _ = self.rt.block_on(Backend::progress(&self.ctxt, percent));
     }
 
     fn no_interactive(&self) -> bool {
@@ -178,9 +179,25 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
 
 #[interface(name = "io.aosc.DebInstaller1")]
 impl Backend {
-    fn install(&mut self, path: String) -> bool {
-        let install_pm_clone = self.install_pm.clone();
-        let thread = Some(thread::spawn(move || -> anyhow::Result<()> {
+    #[zbus(signal)]
+    async fn progress(ctxt: &SignalEmitter<'_>, percent: u32) -> zbus::Result<()>;
+
+    #[zbus(signal)]
+    async fn finished(ctxt: &SignalEmitter<'_>, result: String) -> zbus::Result<()>;
+
+    fn install(
+        &mut self,
+        #[zbus(signal_emitter)] ctxt: SignalEmitter<'_>,
+        path: String,
+    ) -> bool {
+        let install_pm = Arc::new(AtomicU32::new(0));
+        let install_pm_clone = install_pm.clone();
+        let ctxt = ctxt.into_owned();
+
+        thread::spawn(move || -> anyhow::Result<()> {
+            let rt = tokio::runtime::Runtime::new()
+                .context("Failed to create signal runtime")?;
+            let rt = rt.handle().clone();
             unsafe {
                 env::set_var("DEBIAN_FRONTEND", "passthrough");
                 env::set_var("DEBCONF_PIPE", "/tmp/debkonf-sock");
@@ -227,7 +244,7 @@ impl Backend {
 
             #[cfg(feature = "aosc")]
             let mut history = oma_history::History::new("/var/lib/oma/history.db", true, false)?;
-            
+
             #[cfg(feature = "aosc")]
             let id = history.write(HistoryInfo {
                 summary: &op,
@@ -242,6 +259,8 @@ impl Backend {
             let result = apt.commit(
                 TermLike(Box::new(DebInstallerInstallProgressManager {
                     progress: install_pm_clone.clone(),
+                    rt: rt.clone(),
+                    ctxt: ctxt.clone(),
                 })),
                 &op,
                 &client,
@@ -262,39 +281,20 @@ impl Backend {
 
             install_pm_clone.store(100, Ordering::SeqCst);
 
-            Ok(result?)
-        }));
+            let _ = rt.block_on(Backend::progress(&ctxt, 100));
 
-        self.install_thread = thread;
+            // Emit Finished signal
+            let result_str = match &result {
+                Ok(()) => "ok".to_string(),
+                Err(e) => format!("{e}"),
+            };
+
+            let _ = rt.block_on(Backend::finished(&ctxt, result_str));
+
+            Ok(result?)
+        });
 
         true
-    }
-
-    fn get_progress(&self) -> u32 {
-        self.install_pm.load(Ordering::SeqCst)
-    }
-
-    fn is_finished(&self) -> bool {
-        self.install_thread
-            .as_ref()
-            .is_some_and(|x| x.is_finished())
-    }
-
-    fn finished_get_result(&mut self) -> String {
-        let Some(t) = self.install_thread.take() else {
-            return "BUG: Install thread does not exist".to_string();
-        };
-
-        let res = match t.join() {
-            Ok(t) => t,
-            Err(e) => return format!("BUG: Failed to wait install thread: {:?}", e),
-        };
-
-        if let Err(e) = res {
-            e.to_string()
-        } else {
-            "ok".to_string()
-        }
     }
 
     fn ping(&self) -> &'static str {
