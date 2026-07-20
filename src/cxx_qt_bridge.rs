@@ -71,7 +71,7 @@ use gettextrs::gettext;
 use oma_pm::apt::{OmaApt, OmaAptArgs, OmaAptError};
 
 use crate::{
-    Progress,
+    ProgressEvent,
     cxx_qt_bridge::qobject::{InstallAction, InstallStatus, WorkStatus},
 };
 
@@ -154,7 +154,6 @@ impl qobject::DebInstaller {
             let result = apt
                 .install(&[pkg], true)
                 .and_then(|_| apt.resolve(false, false));
-
             let mut status = InstallStatus::OkToInstall;
 
             if let Err(e) = result {
@@ -196,16 +195,16 @@ impl qobject::DebInstaller {
                 let qt_context = qt_context.clone();
 
                 let _ = qt_context.queue(move |mut ui| match progress {
-                    Progress::Percent(p) => {
+                    ProgressEvent::Percent(p) => {
                         ui.as_mut().set_progress(p as f32 / 100.0);
                     }
-                    Progress::Message(msg) => {
+                    ProgressEvent::Message(msg) => {
                         ui.as_mut().set_message(QString::from(msg));
                     }
-                    Progress::Done => {
+                    ProgressEvent::Done => {
                         ui.as_mut().set_work_status(WorkStatus::Done);
                     }
-                    Progress::Err(_) => {
+                    ProgressEvent::Err(_) => {
                         ui.as_mut().set_has_error(true);
                         ui.as_mut().set_work_status(WorkStatus::Done);
                     }
