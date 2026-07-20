@@ -23,8 +23,8 @@ use oma_pm::{
 };
 use oma_utils::human_bytes::HumanBytes;
 use tracing::{debug, error, info};
-use zbus::object_server::SignalEmitter;
 use zbus::interface;
+use zbus::object_server::SignalEmitter;
 
 pub struct Backend {
     pub exit: Arc<AtomicBool>,
@@ -185,18 +185,13 @@ impl Backend {
     #[zbus(signal)]
     async fn finished(ctxt: &SignalEmitter<'_>, result: String) -> zbus::Result<()>;
 
-    fn install(
-        &mut self,
-        #[zbus(signal_emitter)] ctxt: SignalEmitter<'_>,
-        path: String,
-    ) -> bool {
+    fn install(&mut self, #[zbus(signal_emitter)] ctxt: SignalEmitter<'_>, path: String) -> bool {
         let install_pm = Arc::new(AtomicU32::new(0));
         let install_pm_clone = install_pm.clone();
         let ctxt = ctxt.into_owned();
 
         thread::spawn(move || -> anyhow::Result<()> {
-            let rt = tokio::runtime::Runtime::new()
-                .context("Failed to create signal runtime")?;
+            let rt = tokio::runtime::Runtime::new().context("Failed to create signal runtime")?;
             let rt = rt.handle().clone();
             unsafe {
                 env::set_var("DEBIAN_FRONTEND", "passthrough");
