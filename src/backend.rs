@@ -27,16 +27,9 @@ use tracing::{debug, error, info};
 use zbus::interface;
 use zbus::object_server::SignalEmitter;
 
+#[derive(Default)]
 pub struct Backend {
     pub exit: Arc<Notify>,
-}
-
-impl Default for Backend {
-    fn default() -> Self {
-        Self {
-            exit: Arc::new(Notify::new()),
-        }
-    }
 }
 
 struct DebInstallerInstallProgressManager {
@@ -164,9 +157,11 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
     fn status_change(&self, _pkgname: &str, steps_done: u64, total_steps: u64) {
         let percent = steps_done as f32 / total_steps as f32;
         let percent = (percent * 100.0).round() as u32;
-        self.progress.store(percent, Ordering::SeqCst);
+        let old = self.progress.swap(percent, Ordering::SeqCst);
 
-        let _ = self.rt.block_on(Backend::progress(&self.ctxt, percent));
+        if old != percent {
+            let _ = self.rt.block_on(Backend::progress(&self.ctxt, percent));
+        }
     }
 
     fn no_interactive(&self) -> bool {

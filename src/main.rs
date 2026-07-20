@@ -43,7 +43,6 @@ struct Args {
 )]
 trait OmaClient {
     async fn install(&self, path: String) -> zbus::Result<bool>;
-    async fn ping(&self) -> zbus::Result<String>;
     async fn exit(&self) -> zbus::Result<bool>;
 
     #[zbus(signal)]
