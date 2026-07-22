@@ -853,6 +853,7 @@ dependencies = [
  "cxx-qt-build",
  "cxx-qt-lib",
  "flume",
+ "futures",
  "gettext-rs",
  "num_enum",
  "oma-fetch",
