@@ -203,6 +203,7 @@ impl qobject::DebInstaller {
                     }
                     ProgressEvent::Done => {
                         ui.as_mut().set_work_status(WorkStatus::Done);
+                        ui.as_mut().set_message(QString::from(gettext("Installation complete.")));
                     }
                     ProgressEvent::Err(_) => {
                         ui.as_mut().set_has_error(true);

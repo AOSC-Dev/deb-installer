@@ -1,7 +1,7 @@
 use std::{
     cell::OnceCell,
-    collections::HashMap,
     env,
+    io::{self, BufRead, Write},
     sync::{
         Arc,
         atomic::{AtomicU32, Ordering},
@@ -10,7 +10,7 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
-use anyhow::{bail, Chain, Context};
+use anyhow::Chain;
 use apt_auth_config::AuthConfig;
 use flume::unbounded;
 use oma_fetch::SingleDownloadError;
@@ -23,23 +23,10 @@ use oma_pm::{
     sort::SummarySort,
 };
 use oma_utils::human_bytes::HumanBytes;
-use tokio::sync::Notify;
 use tracing::{debug, error, info};
-use zbus::object_server::SignalEmitter;
-use zbus::{fdo, interface, message::Header, names::BusName};
-use zbus_polkit::policykit1::{AuthorityProxy, CheckAuthorizationFlags, Subject};
-
-pub struct Backend {
-    pub exit: Arc<Notify>,
-    pub auth_token: String,
-    pub authorized_uid: u32,
-    pub captured_pid: u32,
-}
 
 struct DebInstallerInstallProgressManager {
     progress: Arc<AtomicU32>,
-    rt: tokio::runtime::Handle,
-    ctxt: SignalEmitter<'static>,
 }
 
 pub trait RenderPackagesDownloadProgress {
@@ -164,7 +151,8 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
         let old = self.progress.swap(percent, Ordering::SeqCst);
 
         if old != percent {
-            let _ = self.rt.block_on(Backend::progress(&self.ctxt, percent));
+            let _ = writeln!(io::stdout(), "progress {percent}");
+            let _ = io::stdout().flush();
         }
     }
 
@@ -177,134 +165,9 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
     }
 }
 
-impl Backend {
-    /// Verify auth token, UID, PID, exe path, and PPID of the caller.
-    async fn check_caller_identity(
-        &self,
-        conn: &zbus::Connection,
-        hdr: &Header<'_>,
-        auth_token: &str,
-    ) -> anyhow::Result<()> {
-        // Verify auth token first
-        if auth_token != self.auth_token {
-            bail!("Auth token mismatch");
-        }
-
-        let sender = match hdr.sender() {
-            Some(s) => s,
-            None => {
-                bail!("No sender in message header");
-            }
-        };
-
-        let dbus_proxy = match fdo::DBusProxy::new(conn).await {
-            Ok(p) => p,
-            Err(e) => {
-                bail!("Failed to create DBus proxy: {e}");
-            }
-        };
-
-        let bus_name: BusName<'_> = sender.clone().into();
-        let creds = match dbus_proxy.get_connection_credentials(bus_name).await {
-            Ok(c) => c,
-            Err(e) => {
-                bail!("Failed to get caller credentials: {e}");
-            }
-        };
-
-        let caller_uid = match creds.unix_user_id() {
-            Some(uid) => uid,
-            None => {
-                bail!("No uid in caller credentials");
-            }
-        };
-
-        if caller_uid != self.authorized_uid {
-            bail!(
-                "Caller UID {caller_uid} != authorized UID {}",
-                self.authorized_uid
-            );
-        }
-
-        let caller_pid = match creds.process_id() {
-            Some(pid) => pid,
-            None => {
-                bail!("No UnixProcessID in caller credentials");
-            }
-        };
-
-        // Verify caller's exe matches our own binary
-        if caller_pid != self.captured_pid {
-            bail!(
-                "Caller PID {caller_pid} != captured PID {}",
-                self.captured_pid
-            );
-        }
-
-        // Walk the PPID chain from the backend upward to confirm the frontend
-        // is our ancestor (frontend → pkexec → us)
-        if !verify_frontend_ancestry(self.captured_pid) {
-            bail!(
-                "Frontend PID {} is not in our ancestry chain",
-                self.captured_pid
-            );
-        }
-
-        Ok(())
-    }
-
-    /// Combined authorization check: polkit + token + UID + PID + exe + PPID
-    async fn check_authorization(
-        &self,
-        conn: &zbus::Connection,
-        hdr: &Header<'_>,
-        action_id: &str,
-        auth_token: &str,
-    ) -> anyhow::Result<()> {
-        let subject = match Subject::new_for_message_header(hdr) {
-            Ok(s) => s,
-            Err(e) => {
-                bail!("Failed to create polkit subject: {e}");
-            }
-        };
-
-        let authority = match AuthorityProxy::new(conn).await {
-            Ok(a) => a,
-            Err(e) => {
-                bail!("Failed to connect to polkit: {e}");
-            }
-        };
-
-        let result = match authority
-            .check_authorization(
-                &subject,
-                action_id,
-                &HashMap::new(),
-                CheckAuthorizationFlags::AllowUserInteraction.into(),
-                "",
-            )
-            .await
-        {
-            Ok(r) => r,
-            Err(e) => {
-                bail!("Polkit authorization check failed: {e}");
-            }
-        };
-
-        if !result.is_authorized {
-            bail!(
-                "Authorization denied for {action_id} (challenge={})",
-                result.is_challenge
-            );
-        }
-
-        // Verify the caller's identity (token + UID + PID + exe + PPID)
-        self.check_caller_identity(conn, hdr, auth_token).await
-    }
-}
-
-/// Verify that the frontend's binary matches ours and that it is
-/// one of our ancestors in the process tree (frontend → pkexec → us).
+/// Walk up the PPID chain from ourselves and verify the frontend PID
+/// is one of our ancestors (frontend → pkexec → us).
+/// Also verifies the frontend's executable matches our own binary.
 fn verify_frontend_ancestry(frontend_pid: u32) -> bool {
     let mut system = sysinfo::System::new();
     let self_exe = match std::env::current_exe() {
@@ -353,159 +216,185 @@ fn verify_frontend_ancestry(frontend_pid: u32) -> bool {
     }
 }
 
-#[interface(name = "io.aosc.DebInstaller1")]
-impl Backend {
-    #[zbus(signal)]
-    async fn progress(ctxt: &SignalEmitter<'_>, percent: u32) -> zbus::Result<()>;
+/// Run the backend: read commands from stdin, write results to stdout.
+pub fn run_backend() -> anyhow::Result<()> {
+    let lock_path = std::path::Path::new("/run/lock/deb-installer");
+    std::fs::create_dir_all(lock_path.parent().unwrap())?;
+    let _lock = oma_utils::get_file_lock(lock_path)?;
 
-    #[zbus(signal)]
-    async fn finished(ctxt: &SignalEmitter<'_>, result: String) -> zbus::Result<()>;
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
 
-    async fn install(
-        &mut self,
-        #[zbus(signal_emitter)] ctxt: SignalEmitter<'_>,
-        #[zbus(header)] hdr: Header<'_>,
-        path: String,
-        auth_token: String,
-    ) -> bool {
-        // Combined polkit + token + UID + PID + exe + PPID authorization check
-        if let Err(reason) = self
-            .check_authorization(
-                ctxt.connection(),
-                &hdr,
-                "io.aosc.deb_installer.manage",
-                &auth_token,
-            )
-            .await
-        {
-            error!("{reason}");
-            let _ = Backend::finished(&ctxt, reason.to_string()).await;
-            return false;
-        }
+    let mut auth_token = String::new();
+    let mut frontend_pid: Option<u32> = None;
 
-        let install_pm = Arc::new(AtomicU32::new(0));
-        let install_pm_clone = install_pm.clone();
-        let ctxt = ctxt.into_owned();
+    for line in io::stdin().lock().lines() {
+        let line = line?;
 
-        thread::spawn(move || -> anyhow::Result<()> {
-            let rt = tokio::runtime::Runtime::new().context("Failed to create signal runtime")?;
-            let rt = rt.handle().clone();
-            unsafe {
-                env::set_var("DEBIAN_FRONTEND", "passthrough");
-                env::set_var("DEBCONF_PIPE", "/tmp/debkonf-sock");
+        // Every line must start with the auth token
+        let (token, rest) = match line.split_once(' ') {
+            Some(pair) => pair,
+            None => {
+                error!("Malformed command (missing token): {line}");
+                continue;
             }
+        };
 
-            let mut apt =
-                OmaApt::new(vec![path.to_string()], OmaAptArgs::builder().build(), false)?;
-
-            let matcher = PackagesMatcher::builder()
-                .filter_candidate(true)
-                .filter_downloadable_candidate(false)
-                .select_dbg(false)
-                .cache(&apt.cache)
-                .build();
-
-            let pkgs = matcher.match_local_glob(&path)?;
-
-            apt.install(&pkgs, true)?;
-            apt.resolve(true, false)?;
-
-            let auth = AuthConfig::system("/").ok();
-
-            let client = oma_fetch::reqwest::Client::builder()
-                .user_agent("oma/1.14.514")
-                .build()
-                .map(|client| {
-                    if let Some(auth) = auth {
-                        reqwest_middleware::ClientBuilder::new(client)
-                            .with_init(apt_auth_config::reqwuest::AuthMiddleware::new(auth))
-                            .build()
-                    } else {
-                        client.into()
-                    }
-                })?;
-
-            let op = apt.build_transaction(SummarySort::default(), |_| false, |_| false)?;
-
-            let (download_tx, download_rx) = unbounded();
-
-            thread::spawn(move || {
-                let mut pb = NoProgressBar::default();
-                pb.render_progress(&download_rx);
-            });
-
-            #[cfg(feature = "aosc")]
-            let mut history = oma_history::History::new("/var/lib/oma/history.db", true, false)?;
-
-            #[cfg(feature = "aosc")]
-            let id = history.write(HistoryInfo {
-                summary: &op,
-                start_time: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64,
-                success: false,
-                is_fix_broken: false,
-                is_undo: false,
-                topics_enabled: Vec::new(),
-                topics_disabled: Vec::new(),
-            })?;
-
-            let result = apt.commit(
-                TermLike(Box::new(DebInstallerInstallProgressManager {
-                    progress: install_pm_clone.clone(),
-                    rt: rt.clone(),
-                    ctxt: ctxt.clone(),
-                })),
-                &op,
-                &client,
-                CommitConfig {
-                    network_thread: None,
-                    download_only: false,
-                },
-                None,
-                move |event| {
-                    if let Err(e) = download_tx.send(event) {
-                        debug!("Send progress channel got error: {}; maybe check archive work still in progress", e);
-                    }
-                },
-            );
-
-            #[cfg(feature = "aosc")]
-            history.edit_status(id, result.is_ok())?;
-
-            install_pm_clone.store(100, Ordering::SeqCst);
-
-            let _ = rt.block_on(Backend::progress(&ctxt, 100));
-
-            let result_str = match &result {
-                Ok(()) => "ok".to_string(),
-                Err(e) => format!("{e}"),
-            };
-
-            let _ = rt.block_on(Backend::finished(&ctxt, result_str));
-
-            Ok(result?)
-        });
-
-        true
-    }
-
-    async fn exit(
-        &self,
-        #[zbus(signal_emitter)] ctxt: SignalEmitter<'_>,
-        #[zbus(connection)] conn: &zbus::Connection,
-        #[zbus(header)] hdr: Header<'_>,
-        auth_token: String,
-    ) -> bool {
-        // Combined polkit + token + UID + PID + exe + PPID authorization check
-        if let Err(reason) = self
-            .check_authorization(conn, &hdr, "io.aosc.deb_installer.manage", &auth_token)
-            .await
-        {
-            error!("{reason}");
-            let _ = Backend::finished(&ctxt, reason.to_string()).await;
-            return false;
+        // First valid line establishes the token
+        if auth_token.is_empty() {
+            auth_token = token.to_string();
+        } else if token != auth_token {
+            error!("Auth token mismatch: ignoring command");
+            continue;
         }
 
-        self.exit.notify_one();
-        true
+        let mut parts = rest.splitn(2, ' ');
+        match parts.next() {
+            Some("init") => {
+                if frontend_pid.is_some() {
+                    error!("init already called rejecting duplicate");
+                    continue;
+                }
+                if let Ok(pid) = parts.next().unwrap_or("").parse::<u32>() {
+                    frontend_pid = Some(pid);
+                    debug!("Initialized with frontend PID: {pid}");
+                } else {
+                    error!("Invalid frontend PID in init command");
+                }
+            }
+            Some("install") => {
+                let pid = match frontend_pid {
+                    Some(p) => p,
+                    None => {
+                        error!("Not initialized yet");
+                        continue;
+                    }
+                };
+
+                if !verify_frontend_ancestry(pid) {
+                    error!("Frontend PID {pid} is not in our ancestry rejecting install");
+                    continue;
+                }
+
+                let path = parts.next().unwrap_or("").to_string();
+                if let Err(e) = do_install(path) {
+                    error!("Install failed: {e}");
+                }
+            }
+            Some("exit") => break,
+            Some(other) => {
+                error!("Unknown command: {other}");
+            }
+            None => {}
+        }
     }
+
+    debug!("Bye.");
+    Ok(())
+}
+
+fn do_install(path: String) -> anyhow::Result<()> {
+    let install_pm = Arc::new(AtomicU32::new(0));
+    let install_pm_clone = install_pm.clone();
+
+    unsafe {
+        env::set_var("DEBIAN_FRONTEND", "passthrough");
+        env::set_var("DEBCONF_PIPE", "/tmp/debkonf-sock");
+    }
+
+    let mut apt = OmaApt::new(vec![path.to_string()], OmaAptArgs::builder().build(), false)?;
+
+    let matcher = PackagesMatcher::builder()
+        .filter_candidate(true)
+        .filter_downloadable_candidate(false)
+        .select_dbg(false)
+        .cache(&apt.cache)
+        .build();
+
+    let pkgs = matcher.match_local_glob(&path)?;
+    apt.install(&pkgs, true)?;
+    apt.resolve(true, false)?;
+
+    let auth = AuthConfig::system("/").ok();
+
+    let client = oma_fetch::reqwest::Client::builder()
+        .user_agent("oma/1.14.514")
+        .build()
+        .map(|client| {
+            if let Some(auth) = auth {
+                reqwest_middleware::ClientBuilder::new(client)
+                    .with_init(apt_auth_config::reqwuest::AuthMiddleware::new(auth))
+                    .build()
+            } else {
+                client.into()
+            }
+        })?;
+
+    let op = apt.build_transaction(SummarySort::default(), |_| false, |_| false)?;
+
+    let (download_tx, download_rx) = unbounded();
+
+    thread::spawn(move || {
+        let mut pb = NoProgressBar::default();
+        pb.render_progress(&download_rx);
+    });
+
+    #[cfg(feature = "aosc")]
+    let mut history = oma_history::History::new("/var/lib/oma/history.db", true, false)?;
+
+    #[cfg(feature = "aosc")]
+    let id = history.write(HistoryInfo {
+        summary: &op,
+        start_time: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64,
+        success: false,
+        is_fix_broken: false,
+        is_undo: false,
+        topics_enabled: Vec::new(),
+        topics_disabled: Vec::new(),
+    })?;
+
+    let result = apt.commit(
+        TermLike(Box::new(DebInstallerInstallProgressManager {
+            progress: install_pm_clone.clone(),
+        })),
+        &op,
+        &client,
+        CommitConfig {
+            network_thread: None,
+            download_only: false,
+        },
+        None,
+        move |event| {
+            if let Err(e) = download_tx.send(event) {
+                debug!(
+                    "Send progress channel got error: {}; maybe check archive work still in progress",
+                    e
+                );
+            }
+        },
+    );
+
+    // Send result to stdout BEFORE any non-critical operations
+    install_pm_clone.store(100, Ordering::SeqCst);
+    let _ = writeln!(io::stdout(), "progress 100");
+    let _ = io::stdout().flush();
+
+    match &result {
+        Ok(()) => {
+            let _ = writeln!(io::stdout(), "result ok");
+        }
+        Err(e) => {
+            let _ = writeln!(io::stdout(), "result {e}");
+        }
+    }
+    let _ = io::stdout().flush();
+
+    // Non-critical: history logging – don't fail the install if this breaks
+    #[cfg(feature = "aosc")]
+    if let Err(e) = history.edit_status(id, result.is_ok()) {
+        error!("Failed to update install history: {e}");
+    }
+
+    result.map_err(Into::into)
 }
