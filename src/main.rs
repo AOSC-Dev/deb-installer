@@ -1,26 +1,22 @@
 use std::{
     env::{self, current_exe},
-    io::{BufRead, BufReader, PipeReader},
-    path::{Path, PathBuf},
+    io::{BufRead, BufReader, Write},
+    path::PathBuf,
     process::{Child, Command, Stdio, exit},
     sync::OnceLock,
     thread::{self, JoinHandle},
 };
 
 use anyhow::{Context, Result};
-use backend::Backend;
 use clap::Parser;
-use futures::StreamExt;
-use futures::pin_mut;
 use gettextrs::{bind_textdomain_codeset, bindtextdomain, textdomain};
 use oma_pm::{apt::OmaApt, matches::PackagesMatcher, pkginfo::OmaPackage};
-use std::io::Write;
-use tokio::fs::create_dir_all;
-use tracing::{debug, error, level_filters::LevelFilter};
+use tracing::{error, level_filters::LevelFilter};
 use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
-use zbus::{Connection, connection, fdo, proxy};
 
 use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QQuickStyle, QString, QUrl};
+
+use crate::backend::run_backend;
 
 mod backend;
 mod cxx_qt_bridge;
@@ -35,22 +31,6 @@ struct Args {
     backend: bool,
     #[clap(long, short)]
     debug: bool,
-}
-
-#[proxy(
-    interface = "io.aosc.DebInstaller1",
-    default_service = "io.aosc.DebInstaller",
-    default_path = "/io/aosc/DebInstaller"
-)]
-trait OmaClient {
-    async fn install(&self, path: String, auth_token: &str) -> zbus::Result<bool>;
-    async fn exit(&self, auth_token: &str) -> zbus::Result<bool>;
-
-    #[zbus(signal)]
-    async fn progress(&self, percent: u32) -> zbus::Result<()>;
-
-    #[zbus(signal)]
-    async fn finished(&self, result: String) -> zbus::Result<()>;
 }
 
 #[derive(Debug)]
@@ -199,176 +179,63 @@ pub fn on_install(argc: String, tx: flume::Sender<ProgressEvent>) -> JoinHandle<
             .map_err(|e| anyhow::anyhow!("Failed to generate auth token: {e}"))?;
         let token: String = bytes.iter().map(|b| format!("{:02x}", b)).collect();
 
-        let txc = tx.clone();
-        let txc2 = tx.clone();
+        let (out_recv, out_send) = std::io::pipe()?;
 
-        let (mut backend_child, reader) = start_backend()?;
+        let mut child = Command::new("pkexec")
+            .arg("--keep-cwd")
+            .arg(std::env::current_exe()?)
+            .arg("--backend")
+            .stdin(Stdio::piped())
+            .stdout(out_send)
+            .stderr(Stdio::inherit())
+            .spawn()?;
 
-        // Pass the auth token and frontend PID via stdin
-        if let Some(child_stdin) = backend_child.stdin.as_mut() {
-            let _ = writeln!(child_stdin, "{token}");
-            let _ = writeln!(child_stdin, "{}", std::process::id());
+        // Send init command with auth token + our PID
+        let mut child_stdin = child.stdin.take().context("Failed to get child stdin")?;
+        writeln!(child_stdin, "{token} init {}", std::process::id())?;
+        // Send install command
+        writeln!(child_stdin, "{token} install {argc}")?;
+
+        // Read progress and result from child's stdout
+        let mut lines = BufReader::new(out_recv).lines();
+        let crash_msg: Option<String> = loop {
+            let line = match lines.next() {
+                Some(Ok(l)) => l,
+                Some(Err(e)) => break Some(format!("Lost connection to backend: {e}")),
+                None => break Some("Backend exited unexpectedly".to_string()),
+            };
+            let stripped = console::strip_ansi_codes(&line).to_string();
+
+            if let Some(rest) = stripped.strip_prefix("progress ")
+                && let Ok(pct) = rest.trim().parse::<u32>()
+            {
+                let _ = tx.send(ProgressEvent::Percent(pct));
+            } else if stripped == "result ok" {
+                let _ = tx.send(ProgressEvent::Done);
+                break None;
+            } else if let Some(rest) = stripped.strip_prefix("result ") {
+                let _ = tx.send(ProgressEvent::Message(rest.to_string()));
+                let _ = tx.send(ProgressEvent::Err(rest.to_string()));
+                break None;
+            } else {
+                let _ = tx.send(ProgressEvent::Message(stripped));
+            }
+        };
+
+        if let Some(msg) = crash_msg {
+            let _ = tx.send(ProgressEvent::Message(msg.clone()));
+            let _ = tx.send(ProgressEvent::Err(msg));
         }
 
-        let reader = BufReader::new(reader);
+        // Signal exit, close stdin, then wait for the backend
+        let _ = writeln!(child_stdin, "{token} exit");
+        drop(child_stdin);
+        let _ = child.wait();
 
-        thread::spawn(move || {
-            reader.lines().for_each(|line| match line {
-                Ok(line) => {
-                    let _ = txc.send(ProgressEvent::Message(
-                        console::strip_ansi_codes(&line).to_string(),
-                    ));
-                }
-                Err(e) => error!("{e}"),
-            });
-        });
-
-        thread::spawn(move || {
-            let wait = backend_child.wait();
-            match wait {
-                Ok(status) => {
-                    if !status.success() {
-                        let _ = txc2.send(ProgressEvent::Err(format!(
-                            "Backend process exited with status: {status}"
-                        )));
-                    } else {
-                        let _ = txc2.send(ProgressEvent::Done);
-                    }
-                }
-                Err(e) => {
-                    let _ = txc2.send(ProgressEvent::Err(format!(
-                        "Failed to wait for backend: {e}"
-                    )));
-                }
-            }
-        });
-
-        on_install_inner(argc, token, tx)
+        Ok(())
     })
-}
-
-#[tokio::main]
-async fn on_install_inner(
-    argc: String,
-    token: String,
-    tx: flume::Sender<ProgressEvent>,
-) -> Result<()> {
-    let conn = Connection::system().await?;
-    let client = OmaClientProxy::new(&conn).await?;
-
-    // Wait for the backend to start
-    let dbus_proxy = fdo::DBusProxy::new(&conn).await?;
-    if !dbus_proxy
-        .name_has_owner(zbus::names::BusName::from_static_str(
-            "io.aosc.DebInstaller",
-        )?)
-        .await?
-    {
-        let name_stream = dbus_proxy.receive_name_owner_changed().await?;
-        pin_mut!(name_stream);
-
-        while let Some(signal) = name_stream.next().await {
-            let args = signal.args()?;
-            if args.name() == "io.aosc.DebInstaller" && args.new_owner().as_ref().is_some() {
-                break;
-            }
-        }
-    }
-
-    let progress_stream = client.receive_progress().await?;
-    let finished_stream = client.receive_finished().await?;
-    pin_mut!(progress_stream);
-    pin_mut!(finished_stream);
-
-    let _ = client.install(argc, &token).await?;
-
-    loop {
-        tokio::select! {
-            Some(signal) = progress_stream.next() => {
-                let args = signal.args()?;
-                let _ = tx.send_async(ProgressEvent::Percent(args.percent)).await;
-            }
-            Some(signal) = finished_stream.next() => {
-                let args = signal.args()?;
-                let _ = tx.send_async(ProgressEvent::Message(args.result.clone())).await;
-                if args.result == "ok" {
-                    let _ = tx.send_async(ProgressEvent::Done).await;
-                } else {
-                    let _ = tx.send_async(ProgressEvent::Err(args.result)).await;
-                }
-                let _ = client.exit(&token).await;
-                return Ok(());
-            }
-        }
-    }
-}
-
-fn start_backend() -> Result<(Child, PipeReader)> {
-    let (recv, send) = std::io::pipe()?;
-    let child = Command::new("pkexec")
-        .arg("--keep-cwd")
-        .arg(std::env::current_exe()?)
-        .arg("--backend")
-        .stdin(Stdio::piped())
-        .stdout(send.try_clone()?)
-        .stderr(send)
-        .spawn()?;
-
-    Ok((child, recv))
 }
 
 fn start_kde_debconf() -> Result<Child> {
     Ok(Command::new("debconf-kde-helper").spawn()?)
-}
-
-#[tokio::main]
-async fn run_backend() -> Result<()> {
-    let lock_path = Path::new("/run/lock/deb-installer");
-    create_dir_all(lock_path.parent().unwrap()).await?;
-    let _lock = oma_utils::get_file_lock(lock_path)?;
-
-    // PKEXEC_UID is set by pkexec to the UID of the user who invoked it.
-    // The backend MUST be launched via pkexec – refuse otherwise.
-    let authorized_uid = env::var("PKEXEC_UID")
-        .map_err(|_| anyhow::anyhow!("PKEXEC_UID not set, backend must be launched via pkexec"))?
-        .parse::<u32>()
-        .map_err(|e| anyhow::anyhow!("Invalid PKEXEC_UID: {e}"))?;
-
-    // Read auth token and frontend PID from stdin
-    let mut token_buf = String::new();
-    std::io::stdin().read_line(&mut token_buf)?;
-    let auth_token = token_buf.trim().to_string();
-
-    let mut pid_buf = String::new();
-    std::io::stdin().read_line(&mut pid_buf)?;
-    let frontend_pid = pid_buf
-        .trim()
-        .parse::<u32>()
-        .context("Invalid frontend PID from stdin")?;
-
-    let backend = Backend {
-        exit: Default::default(),
-        auth_token,
-        authorized_uid,
-        captured_pid: frontend_pid,
-    };
-
-    let exit = backend.exit.clone();
-
-    rustls::crypto::ring::default_provider()
-        .install_default()
-        .expect("Failed to install rustls crypto provider");
-
-    let _conn = connection::Builder::system()?
-        .name("io.aosc.DebInstaller")?
-        .serve_at("/io/aosc/DebInstaller", backend)?
-        .build()
-        .await?;
-
-    debug!("zbus session created");
-
-    exit.notified().await;
-    debug!("Bye.");
-
-    Ok(())
 }
