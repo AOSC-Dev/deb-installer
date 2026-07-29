@@ -195,7 +195,7 @@ pub fn on_install(argc: String, tx: flume::Sender<ProgressEvent>) -> JoinHandle<
     thread::spawn(move || -> Result<()> {
         // Generate a cryptographically-secure auth token (32 bytes, hex-encoded)
         let mut bytes = [0u8; 32];
-        getrandom::getrandom(&mut bytes)
+        getrandom::fill(&mut bytes)
             .map_err(|e| anyhow::anyhow!("Failed to generate auth token: {e}"))?;
         let token: String = bytes.iter().map(|b| format!("{:02x}", b)).collect();
 

@@ -2,6 +2,7 @@
 name = "deb-installer"
 version = "0.3.4"
 edition = "2024"
+rust-version = "1.95"
 
 [dependencies]
 anyhow = { version = "1.0.102", features = ["backtrace"] }
@@ -17,7 +18,7 @@ clap = { version = "4.6.1", features = ["derive"] }
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 flume = "0.12.0"
 console = "0.16.3"
-getrandom = "0.2"
+getrandom = "0.4"
 sysinfo = "0.39"
 which = "8.0.2"
 num_enum = "0.7.6"
