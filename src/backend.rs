@@ -1,5 +1,6 @@
 use std::{
     cell::OnceCell,
+    collections::HashMap,
     env,
     sync::{
         Arc,
@@ -9,7 +10,7 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
-use anyhow::{Chain, Context};
+use anyhow::{bail, Chain, Context};
 use apt_auth_config::AuthConfig;
 use flume::unbounded;
 use oma_fetch::SingleDownloadError;
@@ -24,12 +25,15 @@ use oma_pm::{
 use oma_utils::human_bytes::HumanBytes;
 use tokio::sync::Notify;
 use tracing::{debug, error, info};
-use zbus::interface;
 use zbus::object_server::SignalEmitter;
+use zbus::{fdo, interface, message::Header, names::BusName};
+use zbus_polkit::policykit1::{AuthorityProxy, CheckAuthorizationFlags, Subject};
 
-#[derive(Default)]
 pub struct Backend {
     pub exit: Arc<Notify>,
+    pub auth_token: String,
+    pub authorized_uid: u32,
+    pub captured_pid: u32,
 }
 
 struct DebInstallerInstallProgressManager {
@@ -173,6 +177,182 @@ impl InstallProgressManager for DebInstallerInstallProgressManager {
     }
 }
 
+impl Backend {
+    /// Verify auth token, UID, PID, exe path, and PPID of the caller.
+    async fn check_caller_identity(
+        &self,
+        conn: &zbus::Connection,
+        hdr: &Header<'_>,
+        auth_token: &str,
+    ) -> anyhow::Result<()> {
+        // Verify auth token first
+        if auth_token != self.auth_token {
+            bail!("Auth token mismatch");
+        }
+
+        let sender = match hdr.sender() {
+            Some(s) => s,
+            None => {
+                bail!("No sender in message header");
+            }
+        };
+
+        let dbus_proxy = match fdo::DBusProxy::new(conn).await {
+            Ok(p) => p,
+            Err(e) => {
+                bail!("Failed to create DBus proxy: {e}");
+            }
+        };
+
+        let bus_name: BusName<'_> = sender.clone().into();
+        let creds = match dbus_proxy.get_connection_credentials(bus_name).await {
+            Ok(c) => c,
+            Err(e) => {
+                bail!("Failed to get caller credentials: {e}");
+            }
+        };
+
+        let caller_uid = match creds.unix_user_id() {
+            Some(uid) => uid,
+            None => {
+                bail!("No uid in caller credentials");
+            }
+        };
+
+        if caller_uid != self.authorized_uid {
+            bail!(
+                "Caller UID {caller_uid} != authorized UID {}",
+                self.authorized_uid
+            );
+        }
+
+        let caller_pid = match creds.process_id() {
+            Some(pid) => pid,
+            None => {
+                bail!("No UnixProcessID in caller credentials");
+            }
+        };
+
+        // Verify caller's exe matches our own binary
+        if caller_pid != self.captured_pid {
+            bail!(
+                "Caller PID {caller_pid} != captured PID {}",
+                self.captured_pid
+            );
+        }
+
+        // Walk the PPID chain from the backend upward to confirm the frontend
+        // is our ancestor (frontend → pkexec → us)
+        if !verify_frontend_ancestry(self.captured_pid) {
+            bail!(
+                "Frontend PID {} is not in our ancestry chain",
+                self.captured_pid
+            );
+        }
+
+        Ok(())
+    }
+
+    /// Combined authorization check: polkit + token + UID + PID + exe + PPID
+    async fn check_authorization(
+        &self,
+        conn: &zbus::Connection,
+        hdr: &Header<'_>,
+        action_id: &str,
+        auth_token: &str,
+    ) -> anyhow::Result<()> {
+        let subject = match Subject::new_for_message_header(hdr) {
+            Ok(s) => s,
+            Err(e) => {
+                bail!("Failed to create polkit subject: {e}");
+            }
+        };
+
+        let authority = match AuthorityProxy::new(conn).await {
+            Ok(a) => a,
+            Err(e) => {
+                bail!("Failed to connect to polkit: {e}");
+            }
+        };
+
+        let result = match authority
+            .check_authorization(
+                &subject,
+                action_id,
+                &HashMap::new(),
+                CheckAuthorizationFlags::AllowUserInteraction.into(),
+                "",
+            )
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                bail!("Polkit authorization check failed: {e}");
+            }
+        };
+
+        if !result.is_authorized {
+            bail!(
+                "Authorization denied for {action_id} (challenge={})",
+                result.is_challenge
+            );
+        }
+
+        // Verify the caller's identity (token + UID + PID + exe + PPID)
+        self.check_caller_identity(conn, hdr, auth_token).await
+    }
+}
+
+/// Verify that the frontend's binary matches ours and that it is
+/// one of our ancestors in the process tree (frontend → pkexec → us).
+fn verify_frontend_ancestry(frontend_pid: u32) -> bool {
+    let mut system = sysinfo::System::new();
+    let self_exe = match std::env::current_exe() {
+        Ok(p) => p,
+        Err(e) => {
+            error!("Failed to get self exe: {e}");
+            return false;
+        }
+    };
+
+    // Verify frontend's executable matches ours
+    let frontend_pid = sysinfo::Pid::from_u32(frontend_pid);
+    system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[frontend_pid]), false);
+    match system.process(frontend_pid) {
+        Some(proc) => {
+            if proc.exe() != Some(&self_exe) {
+                error!("Frontend exe {:?} != self {:?}", proc.exe(), self_exe);
+                return false;
+            }
+        }
+        None => {
+            error!("Frontend process {frontend_pid:?} not found");
+            return false;
+        }
+    }
+
+    // Walk the PPID chain from ourselves upward: us → pkexec → frontend
+    let self_pid = sysinfo::Pid::from_u32(std::process::id());
+    let mut current = self_pid;
+    loop {
+        if current == frontend_pid {
+            return true;
+        }
+
+        system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[current]), false);
+        let ppid = match system.process(current).and_then(|p| p.parent()) {
+            Some(parent) => parent,
+            None => return false,
+        };
+
+        if ppid == current || ppid.as_u32() == 0 {
+            return false;
+        }
+
+        current = ppid;
+    }
+}
+
 #[interface(name = "io.aosc.DebInstaller1")]
 impl Backend {
     #[zbus(signal)]
@@ -181,7 +361,28 @@ impl Backend {
     #[zbus(signal)]
     async fn finished(ctxt: &SignalEmitter<'_>, result: String) -> zbus::Result<()>;
 
-    fn install(&mut self, #[zbus(signal_emitter)] ctxt: SignalEmitter<'_>, path: String) -> bool {
+    async fn install(
+        &mut self,
+        #[zbus(signal_emitter)] ctxt: SignalEmitter<'_>,
+        #[zbus(header)] hdr: Header<'_>,
+        path: String,
+        auth_token: String,
+    ) -> bool {
+        // Combined polkit + token + UID + PID + exe + PPID authorization check
+        if let Err(reason) = self
+            .check_authorization(
+                ctxt.connection(),
+                &hdr,
+                "io.aosc.deb_installer.manage",
+                &auth_token,
+            )
+            .await
+        {
+            error!("{reason}");
+            let _ = Backend::finished(&ctxt, reason.to_string()).await;
+            return false;
+        }
+
         let install_pm = Arc::new(AtomicU32::new(0));
         let install_pm_clone = install_pm.clone();
         let ctxt = ctxt.into_owned();
@@ -287,7 +488,23 @@ impl Backend {
         true
     }
 
-    fn exit(&self) -> bool {
+    async fn exit(
+        &self,
+        #[zbus(signal_emitter)] ctxt: SignalEmitter<'_>,
+        #[zbus(connection)] conn: &zbus::Connection,
+        #[zbus(header)] hdr: Header<'_>,
+        auth_token: String,
+    ) -> bool {
+        // Combined polkit + token + UID + PID + exe + PPID authorization check
+        if let Err(reason) = self
+            .check_authorization(conn, &hdr, "io.aosc.deb_installer.manage", &auth_token)
+            .await
+        {
+            error!("{reason}");
+            let _ = Backend::finished(&ctxt, reason.to_string()).await;
+            return false;
+        }
+
         self.exit.notify_one();
         true
     }
