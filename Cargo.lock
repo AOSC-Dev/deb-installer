@@ -854,6 +854,7 @@ dependencies = [
  "cxx-qt-lib",
  "flume",
  "futures",
+ "getrandom 0.2.17",
  "gettext-rs",
  "num_enum",
  "oma-fetch",
@@ -862,11 +863,13 @@ dependencies = [
  "oma-utils",
  "reqwest-middleware",
  "rustls",
+ "sysinfo 0.39.5",
  "tokio",
  "tracing",
  "tracing-subscriber",
  "which",
  "zbus",
+ "zbus_polkit",
 ]
 
 [[package]]
@@ -4221,6 +4224,19 @@ dependencies = [
  "serde",
  "winnow",
  "zvariant",
+]
+
+[[package]]
+name = "zbus_polkit"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad23d5c4d198c7e2641b33e6e0d1f866f117408ba66fe80bbe52e289eeb77c52"
+dependencies = [
+ "enumflags2",
+ "serde",
+ "serde_repr",
+ "static_assertions",
+ "zbus",
 ]
 
 [[package]]

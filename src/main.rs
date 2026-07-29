@@ -2,7 +2,7 @@ use std::{
     env::{self, current_exe},
     io::{BufRead, BufReader, PipeReader},
     path::{Path, PathBuf},
-    process::{Child, Command, exit},
+    process::{Child, Command, Stdio, exit},
     sync::OnceLock,
     thread::{self, JoinHandle},
 };
@@ -14,6 +14,7 @@ use futures::StreamExt;
 use futures::pin_mut;
 use gettextrs::{bind_textdomain_codeset, bindtextdomain, textdomain};
 use oma_pm::{apt::OmaApt, matches::PackagesMatcher, pkginfo::OmaPackage};
+use std::io::Write;
 use tokio::fs::create_dir_all;
 use tracing::{debug, error, level_filters::LevelFilter};
 use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
@@ -42,8 +43,8 @@ struct Args {
     default_path = "/io/aosc/DebInstaller"
 )]
 trait OmaClient {
-    async fn install(&self, path: String) -> zbus::Result<bool>;
-    async fn exit(&self) -> zbus::Result<bool>;
+    async fn install(&self, path: String, auth_token: &str) -> zbus::Result<bool>;
+    async fn exit(&self, auth_token: &str) -> zbus::Result<bool>;
 
     #[zbus(signal)]
     async fn progress(&self, percent: u32) -> zbus::Result<()>;
@@ -192,10 +193,23 @@ pub fn get_package<'a>(apt: &'a mut OmaApt, arg: &'a str) -> Result<OmaPackage> 
 
 pub fn on_install(argc: String, tx: flume::Sender<ProgressEvent>) -> JoinHandle<Result<()>> {
     thread::spawn(move || -> Result<()> {
+        // Generate a cryptographically-secure auth token (32 bytes, hex-encoded)
+        let mut bytes = [0u8; 32];
+        getrandom::getrandom(&mut bytes)
+            .map_err(|e| anyhow::anyhow!("Failed to generate auth token: {e}"))?;
+        let token: String = bytes.iter().map(|b| format!("{:02x}", b)).collect();
+
         let txc = tx.clone();
         let txc2 = tx.clone();
 
         let (mut backend_child, reader) = start_backend()?;
+
+        // Pass the auth token and frontend PID via stdin
+        if let Some(child_stdin) = backend_child.stdin.as_mut() {
+            let _ = writeln!(child_stdin, "{token}");
+            let _ = writeln!(child_stdin, "{}", std::process::id());
+        }
+
         let reader = BufReader::new(reader);
 
         thread::spawn(move || {
@@ -229,12 +243,16 @@ pub fn on_install(argc: String, tx: flume::Sender<ProgressEvent>) -> JoinHandle<
             }
         });
 
-        on_install_inner(argc, tx)
+        on_install_inner(argc, token, tx)
     })
 }
 
 #[tokio::main]
-async fn on_install_inner(argc: String, tx: flume::Sender<ProgressEvent>) -> Result<()> {
+async fn on_install_inner(
+    argc: String,
+    token: String,
+    tx: flume::Sender<ProgressEvent>,
+) -> Result<()> {
     let conn = Connection::system().await?;
     let client = OmaClientProxy::new(&conn).await?;
 
@@ -262,7 +280,7 @@ async fn on_install_inner(argc: String, tx: flume::Sender<ProgressEvent>) -> Res
     pin_mut!(progress_stream);
     pin_mut!(finished_stream);
 
-    let _ = client.install(argc).await?;
+    let _ = client.install(argc, &token).await?;
 
     loop {
         tokio::select! {
@@ -278,7 +296,7 @@ async fn on_install_inner(argc: String, tx: flume::Sender<ProgressEvent>) -> Res
                 } else {
                     let _ = tx.send_async(ProgressEvent::Err(args.result)).await;
                 }
-                let _ = client.exit().await;
+                let _ = client.exit(&token).await;
                 return Ok(());
             }
         }
@@ -291,9 +309,11 @@ fn start_backend() -> Result<(Child, PipeReader)> {
         .arg("--keep-cwd")
         .arg(std::env::current_exe()?)
         .arg("--backend")
+        .stdin(Stdio::piped())
         .stdout(send.try_clone()?)
         .stderr(send)
         .spawn()?;
+
     Ok((child, recv))
 }
 
@@ -307,7 +327,32 @@ async fn run_backend() -> Result<()> {
     create_dir_all(lock_path.parent().unwrap()).await?;
     let _lock = oma_utils::get_file_lock(lock_path)?;
 
-    let backend = Backend::default();
+    // PKEXEC_UID is set by pkexec to the UID of the user who invoked it.
+    // The backend MUST be launched via pkexec – refuse otherwise.
+    let authorized_uid = env::var("PKEXEC_UID")
+        .map_err(|_| anyhow::anyhow!("PKEXEC_UID not set, backend must be launched via pkexec"))?
+        .parse::<u32>()
+        .map_err(|e| anyhow::anyhow!("Invalid PKEXEC_UID: {e}"))?;
+
+    // Read auth token and frontend PID from stdin
+    let mut token_buf = String::new();
+    std::io::stdin().read_line(&mut token_buf)?;
+    let auth_token = token_buf.trim().to_string();
+
+    let mut pid_buf = String::new();
+    std::io::stdin().read_line(&mut pid_buf)?;
+    let frontend_pid = pid_buf
+        .trim()
+        .parse::<u32>()
+        .context("Invalid frontend PID from stdin")?;
+
+    let backend = Backend {
+        exit: Default::default(),
+        auth_token,
+        authorized_uid,
+        captured_pid: frontend_pid,
+    };
+
     let exit = backend.exit.clone();
 
     rustls::crypto::ring::default_provider()
