@@ -37,9 +37,9 @@ Installation
 install -Dvm755 ./target/release/deb-installer \
     /usr/local/bin/deb-installer
 
-# Install the D-Bus service file.
-install -Dvm644 ./data/io.aosc.deb_installer.conf \
-    /usr/share/dbus-1/system.d/io.aosc.deb_installer.conf
+# Install the policy file.
+install -Dvm644 ./data/io.aosc.deb_installer.policy \
+    /usr/share/polkit-1/actions/io.aosc.deb_installer.policy
 
 # Install the icon and .desktop entry.
 install -Dvm644 ./data/io.aosc.deb_installer.svg \
