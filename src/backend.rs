@@ -86,9 +86,16 @@ impl NoProgressBar {
                 index: _,
                 file_name,
                 err,
+                by_hash,
             } => {
-                handle_no_pb_download_error(file_name, err);
-                info!("Retrying using the next available mirror ...");
+                if by_hash {
+                    // 由 by-hash 回退到同文件的传统路径属于正常流程，用 debug 级别记录，不打扰用户
+                    debug!("{}", format_download_error(&file_name, &err));
+                    debug!("Falling back to the traditional by-name path ...");
+                } else {
+                    error!("{}", format_download_error(&file_name, &err));
+                    info!("Retrying using the next available mirror ...");
+                }
             }
             PackageDownloadEvent::DownloadDone { index: _, msg } => {
                 info!("Done: {msg}");
@@ -125,23 +132,21 @@ impl NoProgressBar {
     }
 }
 
-fn handle_no_pb_download_error(file_name: String, error: SingleDownloadError) {
-    let errs = Chain::new(&error).collect::<Vec<_>>();
+fn format_download_error(file_name: &str, error: &SingleDownloadError) -> String {
+    let errs = Chain::new(error).collect::<Vec<_>>();
     let first_cause = errs.first().unwrap().to_string();
     let last = errs.iter().skip(1).last();
 
     if let Some(last_cause) = last {
         let reason = format!("{}: {}", first_cause, last_cause);
-        error!(
-            "Failed to download package {}, Reason: {}.",
-            file_name, reason
-        );
+        format!("Failed to download package {}, Reason: {}.", file_name, reason)
     } else {
-        error!(
-            "Failed to download package {}, Reason: {}.",
-            file_name, first_cause
-        );
+        format!("Failed to download package {}, Reason: {}.", file_name, first_cause)
     }
+}
+
+fn handle_no_pb_download_error(file_name: String, error: SingleDownloadError) {
+    error!("{}", format_download_error(&file_name, &error));
 }
 
 impl InstallProgressManager for DebInstallerInstallProgressManager {
