@@ -71,7 +71,7 @@ Kirigami.ApplicationWindow {
             text: root.install_button()
             icon.name: "document-save"
             visible: installer.work_status == DebInstaller.Idle && installer.status === DebInstaller.OkToInstall
-            enabled: installer.work_status != DebInstaller.Working
+            enabled: installer.work_status != DebInstaller.Working && installer.work_status != DebInstaller.Done
             onTriggered: installer.install()
         }
 
